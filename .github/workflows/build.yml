@@ -1,5 +1,7 @@
 name: Build APK
-on: [push, workflow_dispatch]
+on:
+  push:
+  workflow_dispatch:
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -8,11 +10,14 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
-      - run: flutter create . --platforms=android
+          cache: true
+      - run: flutter create . --platforms=android --project-name=graceway_app
       - run: flutter pub get
-      - run: dart run flutter_launcher_icons
-      - run: flutter build apk --release
+      - name: Generate app icon (only if icon.png has content)
+        run: |
+          if [ -s assets/images/icon.png ]; then dart run flutter_launcher_icons; fi
+      - run: flutter build apk --release --split-per-abi --target-platform android-arm64
       - uses: actions/upload-artifact@v4
         with:
-          name: graceway-app
-          path: build/app/outputs/flutter-apk/app-release.apk
+          name: graceway-app-compact
+          path: build/app/outputs/flutter-apk/*.apk
