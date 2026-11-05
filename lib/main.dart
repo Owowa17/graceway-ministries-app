@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
+
 const kBlue = Color(0xFF14307A);
 const kGold = Color(0xFFC9A24B);
 const kBg = Color(0xFFF7F8FC);
@@ -172,12 +173,7 @@ class HomePage extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 20),
-        const SectionCard(
-          title: 'Daily Devotional',
-          child: Text(
-            'Come to me, all you who are weary and burdened, and I will give you rest. (Matthew 11:28)\n\nEdit this text each day, or connect it to a server later.',
-          ),
-        ),
+        const DailyGraceCard(),
         const SectionCard(
           title: 'Announcements',
           child: Text('Sunday Service: 9:00 AM\nMidweek Prayer: Wednesday, 6:00 PM'),
@@ -429,6 +425,100 @@ class _PrayerPageState extends State<PrayerPage> {
           label: const Text('Join our WhatsApp family'),
         ),
       ],
+    );
+  }
+}
+
+class DailyGraceCard extends StatelessWidget {
+  const DailyGraceCard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: Colors.white,
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 14),
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: kGold.withOpacity(0.4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            color: kBlue,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              children: [
+                Container(
+                  width: 54,
+                  height: 54,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: kGold, width: 2),
+                  ),
+                  child: ClipOval(
+                    child: Image.asset(
+                      'assets/images/pastor.png',
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        color: kGold,
+                        alignment: Alignment.center,
+                        child: const Text(
+                          'MO',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 18,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'DAILY GRACE',
+                        style: TextStyle(
+                          color: kGold,
+                          letterSpacing: 2,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Pst. Micheal Owowa',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        'Lead Pastor, Graceway & Healing Ministries',
+                        style: TextStyle(color: Colors.white70, fontSize: 11),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const Padding(
+            padding: EdgeInsets.all(16),
+            child: Text(
+              'Come to me, all you who are weary and burdened, and I will give you rest. (Matthew 11:28)',
+              style: TextStyle(fontSize: 15, height: 1.45),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
