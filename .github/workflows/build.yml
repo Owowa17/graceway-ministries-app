@@ -21,6 +21,9 @@ jobs:
         run: |
           cp -r /tmp/keep/lib/. lib/
           cp /tmp/keep/pubspec.yaml pubspec.yaml
+      - name: Allow internet access
+        run: sed -i 's|<application|<uses-permission android:name="android.permission.INTERNET"/>\n    <application|' android/app/src/main/AndroidManifest.xml
+      - run: flutter pub add http
       - run: flutter pub add url_launcher
       - run: flutter pub get
       - name: Generate app icon
