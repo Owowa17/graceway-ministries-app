@@ -319,9 +319,12 @@ class PrayerPage extends StatefulWidget {
 }
 
 class _PrayerPageState extends State<PrayerPage> {
+  static const sheetUrl = 'https://script.google.com/macros/s/AKfycbyu5oy9poPRxVJ9JloFlcHJTOn0PCijpNwl0iBISB0DpZAfS4EUKeMRBc7N4y6ehXudVg/exec';
+
   final _name = TextEditingController();
   final _request = TextEditingController();
   bool _private = true;
+  bool _sending = false;
 
   @override
   void dispose() {
@@ -330,18 +333,34 @@ class _PrayerPageState extends State<PrayerPage> {
     super.dispose();
   }
 
-  void _submit() {
+  void _say(String msg) {
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
+  }
+
+  Future<void> _submit() async {
     if (_request.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please write your prayer request')),
-      );
+      _say('Please write your prayer request');
       return;
     }
-    _name.clear();
-    _request.clear();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Thank you. We are praying with you.')),
-    );
+    setState(() => _sending = true);
+    try {
+      final res = await http.post(Uri.parse(sheetUrl), body: {
+        'name': _name.text.trim(),
+        'request': _request.text.trim(),
+        'private': _private.toString(),
+      });
+      if (!mounted) return;
+      if (res.statusCode < 400) {
+        _name.clear();
+        _request.clear();
+        _say('Thank you. We are praying with you.');
+      } else {
+        _say('Could not send. Please try again.');
+      }
+    } catch (_) {
+      if (mounted) _say('Could not send. Check your internet and try again.');
+    }
+    if (mounted) setState(() => _sending = false);
   }
 
   Future<void> _joinWhatsApp() async {
@@ -349,11 +368,7 @@ class _PrayerPageState extends State<PrayerPage> {
       Uri.parse('https://chat.whatsapp.com/Ij16QL4YLDh0Sp3xr50VY9'),
       mode: LaunchMode.externalApplication,
     );
-    if (!ok && mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not open WhatsApp')),
-      );
-    }
+    if (!ok && mounted) _say('Could not open WhatsApp');
   }
 
   @override
@@ -398,8 +413,8 @@ class _PrayerPageState extends State<PrayerPage> {
             backgroundColor: kBlue,
             padding: const EdgeInsets.symmetric(vertical: 14),
           ),
-          onPressed: _submit,
-          child: const Text('Send request'),
+          onPressed: _sending ? null : _submit,
+          child: Text(_sending ? 'Sending...' : 'Send request'),
         ),
         const SizedBox(height: 12),
         OutlinedButton.icon(
