@@ -344,6 +344,18 @@ class _PrayerPageState extends State<PrayerPage> {
     );
   }
 
+  Future<void> _joinWhatsApp() async {
+    final ok = await launchUrl(
+      Uri.parse('https://chat.whatsapp.com/Ij16QL4YLDh0Sp3xr50VY9'),
+      mode: LaunchMode.externalApplication,
+    );
+    if (!ok && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not open WhatsApp')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return ListView(
@@ -388,6 +400,17 @@ class _PrayerPageState extends State<PrayerPage> {
           ),
           onPressed: _submit,
           child: const Text('Send request'),
+        ),
+        const SizedBox(height: 12),
+        OutlinedButton.icon(
+          style: OutlinedButton.styleFrom(
+            foregroundColor: kBlue,
+            side: const BorderSide(color: kGold, width: 1.5),
+            padding: const EdgeInsets.symmetric(vertical: 14),
+          ),
+          onPressed: _joinWhatsApp,
+          icon: const Icon(Icons.groups_outlined),
+          label: const Text('Join our WhatsApp family'),
         ),
       ],
     );
