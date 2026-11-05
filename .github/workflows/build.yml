@@ -15,7 +15,11 @@ jobs:
       - run: flutter pub get
       - name: Generate app icon (only if icon.png has content)
         run: |
-          if [ -s assets/images/icon.png ]; then dart run flutter_launcher_icons; fi
+          if [ -s assets/images/icon.png ]; then
+            flutter pub add --dev flutter_launcher_icons
+            printf 'flutter_launcher_icons:\n  android: true\n  ios: false\n  image_path: "assets/images/icon.png"\n' > flutter_launcher_icons.yaml
+            dart run flutter_launcher_icons
+          fi
       - run: flutter build apk --release --split-per-abi --target-platform android-arm64
       - uses: actions/upload-artifact@v4
         with:
