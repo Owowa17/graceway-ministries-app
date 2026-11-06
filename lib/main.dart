@@ -1,11 +1,15 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
-import 'dart:convert';
+
 const kBlue = Color(0xFF14307A);
 const kGold = Color(0xFFC9A24B);
 const kBg = Color(0xFFF7F8FC);
+
+// One link for prayer requests AND the daily devotional
+const kScriptUrl = 'https://script.google.com/macros/s/AKfycbzbZwuhCyMDb8wjd-68L6C6MzIL36DqNV9QmEoiH_PLhIoAxsjaeDSkPP76dYNnMUiXcw/exec';
 
 void main() => runApp(const GracewayApp());
 
@@ -316,8 +320,6 @@ class PrayerPage extends StatefulWidget {
 }
 
 class _PrayerPageState extends State<PrayerPage> {
-  static const sheetUrl = 'https://script.google.com/macros/s/AKfycbyu5oy9poPRxVJ9JloFlcHJTOn0PCijpNwl0iBISB0DpZAfS4EUKeMRBc7N4y6ehXudVg/exec';
-
   final _name = TextEditingController();
   final _request = TextEditingController();
   bool _private = true;
@@ -341,7 +343,7 @@ class _PrayerPageState extends State<PrayerPage> {
     }
     setState(() => _sending = true);
     try {
-      final res = await http.post(Uri.parse(sheetUrl), body: {
+      final res = await http.post(Uri.parse(kScriptUrl), body: {
         'name': _name.text.trim(),
         'request': _request.text.trim(),
         'private': _private.toString(),
@@ -429,8 +431,6 @@ class _PrayerPageState extends State<PrayerPage> {
   }
 }
 
-const kDevotionalUrl = 'https://script.google.com/macros/s/AKfycbyu5oy9poPRxVJ9JloFlcHJTOn0PCijpNwl0iBISB0DpZAfS4EUKeMRBc7N4y6ehXudVg/exec';
-
 class DailyGraceCard extends StatefulWidget {
   const DailyGraceCard({super.key});
   @override
@@ -438,7 +438,7 @@ class DailyGraceCard extends StatefulWidget {
 }
 
 class _DailyGraceCardState extends State<DailyGraceCard> {
-  String title = "Rest for the weary";
+  String title = 'Rest for the weary';
   String verse =
       'Come to me, all you who are weary and burdened, and I will give you rest. (Matthew 11:28)';
   String message = '';
@@ -455,7 +455,7 @@ class _DailyGraceCardState extends State<DailyGraceCard> {
   Future<void> _load() async {
     try {
       final res = await http
-          .get(Uri.parse(kDevotionalUrl))
+          .get(Uri.parse(kScriptUrl))
           .timeout(const Duration(seconds: 15));
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body) as Map<String, dynamic>;
@@ -589,7 +589,7 @@ class _DailyGraceCardState extends State<DailyGraceCard> {
                   ),
                 ),
                 const SizedBox(height: 12),
-                _label('TODAY\'S WORD'),
+                _label("TODAY'S WORD"),
                 Container(
                   width: double.infinity,
                   padding: const EdgeInsets.all(12),
@@ -636,27 +636,4 @@ class _DailyGraceCardState extends State<DailyGraceCard> {
                     child: Text(
                       prayer,
                       style: const TextStyle(
-                        fontSize: 15,
-                        height: 1.55,
-                        color: kBlue,
-                      ),
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 8),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton.icon(
-                    onPressed: _share,
-                    icon: const Icon(Icons.share_outlined, size: 18),
-                    label: const Text('Share on WhatsApp'),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
+ 
