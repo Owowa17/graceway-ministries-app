@@ -623,7 +623,7 @@ class _DailyGraceCardState extends State<DailyGraceCard> {
                       child: Text(expanded ? 'Show less' : 'Read full message'),
                     ),
                 ],
-                if (prayer.isNotEmpty) ...[
+                                if (prayer.isNotEmpty) ...[
                   const SizedBox(height: 14),
                   _label('PRAYER'),
                   Container(
@@ -636,4 +636,28 @@ class _DailyGraceCardState extends State<DailyGraceCard> {
                     child: Text(
                       prayer,
                       style: const TextStyle(
+                        fontSize: 15,
+                        height: 1.55,
+                        color: kBlue,
+                      ),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    onPressed: _share,
+                    icon: const Icon(Icons.share_outlined, size: 18),
+                    label: const Text('Share on WhatsApp'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
  
