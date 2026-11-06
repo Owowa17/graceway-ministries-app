@@ -9,7 +9,7 @@ const kGold = Color(0xFFC9A24B);
 const kBg = Color(0xFFF7F8FC);
 
 // One link for prayer requests AND the daily devotional
-const kScriptUrl = 'https://script.google.com/macros/s/AKfycbzbZwuhCyMDb8wjd-68L6C6MzIL36DqNV9QmEoiH_PLhIoAxsjaeDSkPP76dYNnMUiXcw/exec';
+const kScriptUrl = 'https://script.google.com/macros/s/AKfycbyccmvbK6vy-h-g5TPjvuAwKjlqJHgSr49wlJnuef6N06H8rVjVRQBzVWWUhQgaWYJ0/exec';
 
 void main() => runApp(const GracewayApp());
 
