@@ -673,3 +673,236 @@ class _NeedHelpTabState extends State<NeedHelpTab> {
     );
   }
 }
+import 'dart:convert';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'common.dart';
+
+// ---------- daily devotional ----------
+
+class DailyGraceCard extends StatefulWidget {
+  const DailyGraceCard({super.key});
+  @override
+  State<DailyGraceCard> createState() => _DailyGraceCardState();
+}
+
+class _DailyGraceCardState extends State<DailyGraceCard> {
+  String title = 'Rest for the weary';
+  String verse =
+      'Come to me, all you who are weary and burdened, and I will give you rest. (Matthew 11:28)';
+  String message = '';
+  String prayer = '';
+  bool loading = true;
+  bool expanded = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final res = await http
+          .get(Uri.parse(kScriptUrl))
+          .timeout(const Duration(seconds: 15));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body) as Map<String, dynamic>;
+        final v = (data['verse'] ?? '').toString();
+        if (v.isNotEmpty && mounted) {
+          setState(() {
+            title = (data['title'] ?? '').toString();
+            verse = v;
+            message = (data['message'] ?? '').toString();
+            prayer = (data['prayer'] ?? '').toString();
+          });
+        }
+      }
+    } catch (_) {}
+    if (mounted) setState(() => loading = false);
+  }
+
+  Future<void> _share() async {
+    final text =
+        'DAILY GRACE\n\n$title\n\n$verse\n\n$message\n\nPrayer:\n$prayer\n\n- Graceway & Healing Ministries';
+    await openUri(Uri.parse('https://wa.me/?text=${Uri.encodeComponent(text)}'));
+  }
+
+  Widget _label(String text) => Padding(
+        padding: const EdgeInsets.only(bottom: 4),
+        child: Text(
+          text,
+          style: const TextStyle(
+            color: kGold,
+            fontSize: 12,
+            letterSpacing: 1.5,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      );
+
+  @override
+  Widget build(BuildContext context) {
+    final long = message.length > 280;
+    return Card(
+      color: Colors.white,
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 14),
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: kGold.withOpacity(0.4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            color: kBlue,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              children: [
+                Container(
+                  width: 54,
+                  height: 54,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: kGold, width: 2),
+                  ),
+                  child: ClipOval(
+                    child: Image.asset(
+                      'assets/images/pastor.png',
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        color: kGold,
+                        alignment: Alignment.center,
+                        child: const Text(
+                          'MO',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 18,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'DAILY GRACE',
+                        style: TextStyle(
+                          color: kGold,
+                          letterSpacing: 2,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Pst. Micheal Owowa',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        'Lead Pastor, Graceway & Healing Ministries',
+                        style: TextStyle(color: Colors.white70, fontSize: 11),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (loading) const LinearProgressIndicator(minHeight: 2),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: kBlue,
+                    fontSize: 19,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _label("TODAY'S WORD"),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: const BoxDecoration(
+                    color: kBg,
+                    border: Border(left: BorderSide(color: kGold, width: 3)),
+                  ),
+                  child: Text(
+                    verse,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      height: 1.5,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
+                if (message.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  _label('MESSAGE'),
+                  Text(
+                    message,
+                    maxLines: (long && !expanded) ? 7 : null,
+                    overflow: (long && !expanded)
+                        ? TextOverflow.ellipsis
+                        : TextOverflow.visible,
+                    style: const TextStyle(fontSize: 15, height: 1.55),
+                  ),
+                  if (long)
+                    TextButton(
+                      onPressed: () => setState(() => expanded = !expanded),
+                      child: Text(expanded ? 'Show less' : 'Read full message'),
+                    ),
+                ],
+                if (prayer.isNotEmpty) ...[
+                  const SizedBox(height: 14),
+                  _label('PRAYER'),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: kBlue.withOpacity(0.06),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      prayer,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        height: 1.55,
+                        color: kBlue,
+                      ),
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton.icon(
+                    onPressed: _share,
+                    icon: const Icon(Icons.share_outlined, size: 18),
+                    label: const Text('Share on WhatsApp'),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
