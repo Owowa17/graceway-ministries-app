@@ -1116,3 +1116,161 @@ class _PrayerPageState extends State<PrayerPage> {
     );
   }
 }
+import 'package:flutter/material.dart';
+import 'common.dart';
+import 'community.dart';
+import 'daily.dart';
+import 'pages.dart';
+
+void main() => runApp(const GracewayApp());
+
+// ---------- app ----------
+
+class GracewayApp extends StatelessWidget {
+  const GracewayApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Graceway Healing Ministries',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        useMaterial3: true,
+        scaffoldBackgroundColor: kBg,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: kBlue,
+          primary: kBlue,
+          secondary: kGold,
+        ),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: kBlue,
+          foregroundColor: Colors.white,
+          centerTitle: true,
+        ),
+      ),
+      home: const SplashScreen(),
+    );
+  }
+}
+
+class LogoImage extends StatelessWidget {
+  final double height;
+  final String file;
+  const LogoImage({super.key, this.height = 120, this.file = 'logo.png'});
+
+  @override
+  Widget build(BuildContext context) {
+    return Image.asset(
+      'assets/images/$file',
+      height: height,
+      errorBuilder: (_, __, ___) =>
+          Icon(Icons.church, size: height * 0.6, color: kGold),
+    );
+  }
+}
+
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+  @override
+  void initState() {
+    super.initState();
+    Future.delayed(const Duration(seconds: 2), () {
+      if (!mounted) return;
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (_) => const HomeShell()),
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const Scaffold(
+      backgroundColor: Colors.white,
+      body: Center(child: LogoImage(height: 220)),
+    );
+  }
+}
+
+class HomeShell extends StatefulWidget {
+  const HomeShell({super.key});
+  @override
+  State<HomeShell> createState() => _HomeShellState();
+}
+
+class _HomeShellState extends State<HomeShell> {
+  int _index = 0;
+
+  static const _titles = ['Home', 'Sermons', 'Community', 'Give', 'Prayer'];
+  final _pages = const [
+    HomePage(),
+    SermonsPage(),
+    CommunityPage(),
+    GivePage(),
+    PrayerPage(),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: Text(_titles[_index])),
+      body: IndexedStack(index: _index, children: _pages),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _index,
+        indicatorColor: kGold.withOpacity(0.35),
+        onDestinationSelected: (i) => setState(() => _index = i),
+        destinations: const [
+          NavigationDestination(icon: Icon(Icons.home_outlined), label: 'Home'),
+          NavigationDestination(
+              icon: Icon(Icons.play_circle_outline), label: 'Sermons'),
+          NavigationDestination(
+              icon: Icon(Icons.groups_outlined), label: 'Community'),
+          NavigationDestination(
+              icon: Icon(Icons.volunteer_activism_outlined), label: 'Give'),
+          NavigationDestination(
+              icon: Icon(Icons.front_hand_outlined), label: 'Prayer'),
+        ],
+      ),
+    );
+  }
+}
+
+class HomePage extends StatelessWidget {
+  const HomePage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        const Center(child: LogoImage(height: 150)),
+        const SizedBox(height: 8),
+        const Center(
+          child: Text(
+            'Healing for the broken. Grace for the journey.',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+                color: kBlue, fontStyle: FontStyle.italic, fontSize: 15),
+          ),
+        ),
+        const SizedBox(height: 20),
+        const DailyGraceCard(),
+        const HelpBanner(),
+        const SectionCard(
+          title: 'Announcements',
+          child: Text(
+              'Sunday Service: 9:00 AM\nMidweek Prayer: Wednesday, 6:00 PM\nHealing Night: Last Friday of the month, 7:00 PM'),
+        ),
+        const SectionCard(
+          title: 'Need counselling or prayer?',
+          child: Text(
+              'Tap the Prayer tab to send us a request, or open the Community tab to ask for help or share a testimony.'),
+        ),
+      ],
+    );
+  }
+}
