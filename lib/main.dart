@@ -906,3 +906,213 @@ class _DailyGraceCardState extends State<DailyGraceCard> {
     );
   }
 }
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'common.dart';
+
+// ---------- sermons (placeholder) ----------
+
+class SermonsPage extends StatelessWidget {
+  const SermonsPage({super.key});
+
+  static const _sermons = [
+    ['Grace That Restores', 'Sunday Service'],
+    ['Walking in Healing', 'Midweek Service'],
+    ['Faith for the Journey', 'Sunday Service'],
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      padding: const EdgeInsets.all(16),
+      itemCount: _sermons.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      itemBuilder: (_, i) => Card(
+        color: Colors.white,
+        elevation: 0,
+        child: ListTile(
+          leading: const CircleAvatar(
+            backgroundColor: kBlue,
+            child: Icon(Icons.play_arrow, color: Colors.white),
+          ),
+          title: Text(_sermons[i][0],
+              style: const TextStyle(fontWeight: FontWeight.w600)),
+          subtitle: Text(_sermons[i][1]),
+          trailing: const Icon(Icons.download_outlined, color: kGold),
+          onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Audio and video playback coming soon')),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ---------- give ----------
+
+class GivePage extends StatelessWidget {
+  const GivePage({super.key});
+
+  static const bank = 'Fidelity Bank';
+  static const accName = 'Micheal Owowa';
+  static const accNumber = '6011920596';
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        const SectionCard(
+          title: 'Give with a cheerful heart',
+          child: Text('Your tithes and offerings support the work of the ministry.'),
+        ),
+        SectionCard(
+          title: 'Bank transfer',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Bank: $bank'),
+              const Text('Account name: $accName'),
+              const Text('Temporary ministry account'),
+              const Text('Account number: $accNumber',
+                  style: TextStyle(fontWeight: FontWeight.w700)),
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
+                onPressed: () {
+                  Clipboard.setData(const ClipboardData(text: accNumber));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Account number copied')),
+                  );
+                },
+                icon: const Icon(Icons.copy, size: 18),
+                label: const Text('Copy account number'),
+              ),
+            ],
+          ),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(
+            backgroundColor: kGold,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+          ),
+          onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Online card payment (Paystack) coming soon')),
+          ),
+          child: const Text('Give online (coming soon)'),
+        ),
+      ],
+    );
+  }
+}
+
+// ---------- prayer ----------
+
+class PrayerPage extends StatefulWidget {
+  const PrayerPage({super.key});
+  @override
+  State<PrayerPage> createState() => _PrayerPageState();
+}
+
+class _PrayerPageState extends State<PrayerPage> {
+  final _name = TextEditingController();
+  final _request = TextEditingController();
+  bool _private = true;
+  bool _sending = false;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _request.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (_request.text.trim().isEmpty) {
+      say(context, 'Please write your prayer request');
+      return;
+    }
+    setState(() => _sending = true);
+    final ok = await postToScript({
+      'type': 'prayer',
+      'name': _name.text.trim(),
+      'request': _request.text.trim(),
+      'private': _private.toString(),
+    });
+    if (!mounted) return;
+    setState(() => _sending = false);
+    if (ok) {
+      _name.clear();
+      _request.clear();
+      say(context, 'Thank you. We are praying with you.');
+    } else {
+      say(context, 'Could not send. Check your internet and try again.');
+    }
+  }
+
+  Future<void> _joinWhatsApp() async {
+    final ok = await openUri(
+        Uri.parse('https://chat.whatsapp.com/Ij16QL4YLDh0Sp3xr50VY9'));
+    if (!ok && mounted) say(context, 'Could not open WhatsApp');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        const SectionCard(
+          title: 'Share your prayer request',
+          child: Text('Your request is handled with care and confidentiality.'),
+        ),
+        TextField(
+          controller: _name,
+          decoration: const InputDecoration(
+            labelText: 'Your name (optional)',
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _request,
+          maxLines: 6,
+          decoration: const InputDecoration(
+            labelText: 'Prayer request',
+            alignLabelWithHint: true,
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(),
+          ),
+        ),
+        SwitchListTile(
+          value: _private,
+          activeColor: kBlue,
+          title: const Text('Keep this request private'),
+          onChanged: (v) => setState(() => _private = v),
+        ),
+        const SizedBox(height: 6),
+        FilledButton(
+          style: FilledButton.styleFrom(
+            backgroundColor: kBlue,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+          ),
+          onPressed: _sending ? null : _submit,
+          child: Text(_sending ? 'Sending...' : 'Send request'),
+        ),
+        const SizedBox(height: 12),
+        OutlinedButton.icon(
+          style: OutlinedButton.styleFrom(
+            foregroundColor: kBlue,
+            side: const BorderSide(color: kGold, width: 1.5),
+            padding: const EdgeInsets.symmetric(vertical: 14),
+          ),
+          onPressed: _joinWhatsApp,
+          icon: const Icon(Icons.groups_outlined),
+          label: const Text('Join our WhatsApp family'),
+        ),
+      ],
+    );
+  }
+}
