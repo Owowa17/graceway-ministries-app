@@ -315,6 +315,7 @@ class DirectCallCard extends StatelessWidget {
 }
 
 class HomePage extends StatelessWidget {
+class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
@@ -335,11 +336,11 @@ class HomePage extends StatelessWidget {
         const SizedBox(height: 20),
         const DailyGraceCard(),
         const DirectCallCard(),
-        const SectionCard(
-          title: 'Announcements',
-          child: Text(
-              'Sunday Service: 9:00 AM\nMidweek Prayer: Wednesday, 6:00 PM\nHealing Night: Last Friday of the month, 7:00 PM'),
-        ),
+        
+        // The Announcements card has been removed here.
+        // The Daily Healing Verses card is now in its place.
+        const HealingVerseCard(), 
+        
         const SectionCard(
           title: 'Need counselling or prayer?',
           child: Text(
