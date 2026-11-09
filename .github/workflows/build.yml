@@ -31,20 +31,20 @@ jobs:
 
       - run: flutter create . --platforms=android --project-name=graceway_app
 
-      # 👇 CRITICAL FIX: Downgrade Gradle, AGP, and disable the new DSL flag
-      - name: Fix Gradle, AGP, and DSL
+      # 👇 CRITICAL FIX: Upgrade Gradle to >= 8.14.0 and AGP to 8.11.1
+      - name: Fix Gradle & AGP Versions
         run: |
-          # Set Gradle wrapper to a stable version
-          sed -i 's|distributionUrl=.*|distributionUrl=https\\://services.gradle.org/distributions/gradle-8.10.2-all.zip|' android/gradle/wrapper/gradle-wrapper.properties
+          # Set Gradle wrapper to the minimum required version (8.14.0)
+          sed -i 's|distributionUrl=.*|distributionUrl=https\\://services.gradle.org/distributions/gradle-8.14.0-all.zip|' android/gradle/wrapper/gradle-wrapper.properties
           
-          # Downgrade AGP in settings.gradle.kts (or .gradle)
+          # Upgrade AGP to the compatible version (8.11.1)
           if [ -f android/settings.gradle.kts ]; then
-            sed -i 's|id("com.android.application") version ".*"|id("com.android.application") version "8.6.0"|' android/settings.gradle.kts
+            sed -i 's|id("com.android.application") version ".*"|id("com.android.application") version "8.11.1"|' android/settings.gradle.kts
           elif [ -f android/settings.gradle ]; then
-            sed -i 's|id "com.android.application" version ".*"|id "com.android.application" version "8.6.0"|' android/settings.gradle
+            sed -i 's|id "com.android.application" version ".*"|id "com.android.application" version "8.11.1"|' android/settings.gradle
           fi
 
-          # Disable the new AGP DSL interface which is causing the Flutter plugin to fail
+          # Disable the new AGP DSL interface to maintain Flutter plugin compatibility
           echo "android.newDsl=false" >> android/gradle.properties
 
       - name: Setup Gradle Cache
@@ -70,10 +70,23 @@ jobs:
             dart run flutter_launcher_icons || echo "Icon skipped"
           fi
 
-      - name: Build APK (retries on network errors)
+      # 👇 Temporarily use debug signing for release builds to bypass keystore errors
+      - name: Configure Debug Signing for Release
+        run: |
+          BUILD_FILE=""
+          if [ -f android/app/build.gradle ]; then BUILD_FILE="android/app/build.gradle";
+          elif [ -f android/app/build.gradle.kts ]; then BUILD_FILE="android/app/build.gradle.kts"; fi
+          
+          if [ -n "$BUILD_FILE" ]; then
+            sed -i 's/signingConfig = signingConfigs.release/signingConfig = signingConfigs.debug/' "$BUILD_FILE"
+            sed -i 's/signingConfig = signingConfigs.getByName("release")/signingConfig = signingConfigs.getByName("debug")/' "$BUILD_FILE"
+            echo "Patched $BUILD_FILE to use debug signing."
+          fi
+
+      - name: Build APK (retries on network errors, verbose on fail)
         run: |
           for i in 1 2 3; do
-            flutter build apk --release --split-per-abi --target-platform android-arm64 && exit 0
+            flutter build apk --release --split-per-abi --target-platform android-arm64 --verbose && exit 0
             echo "Attempt $i failed, retrying in 20 seconds..."
             sleep 20
           done
