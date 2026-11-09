@@ -12,18 +12,19 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Updated to v4 (uses Node 20, resolves the checkout warning)
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # 2. Updated to v4 and explicitly defining the distribution (resolves setup-java warning)
       - name: Set up Java
         uses: actions/setup-java@v4
         with:
           distribution: 'zulu' 
           java-version: '17'
 
-      # 3. Flutter setup action (this is already on v2 which is the latest)
+      # ✅ REPLACED THE OLD ACTION WITH THE NEW ONE HERE
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
@@ -33,11 +34,9 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      # 4. Build the APK
       - name: Build APK
         run: flutter build apk --release
 
-      # 5. Updated to v4 (resolves the artifact upload warning)
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
