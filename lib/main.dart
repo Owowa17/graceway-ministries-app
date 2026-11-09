@@ -13,15 +13,10 @@ const kGold = Color(0xFFC9A24B);
 const kBg = Color(0xFFF7F8FC);
 const kRed = Color(0xFFB3261E);
 
-// One link for prayers, devotionals, help requests and testimonies
 const kScriptUrl =
     'https://script.google.com/macros/s/AKfycbyccmvbK6vy-h-g5TPjvuAwKjlqJHgSr49wlJnuef6N06H8rVjVRQBzVWWUhQgaWYJ0/exec';
 
-// Urgent help contacts.
-// 112 is Nigeria's toll-free national emergency number.
 const kEmergencyNumber = '112';
-
-// Pastoral care line: use a ministry number, not a personal one.
 const kPastoralPhone = '08120174348';
 
 final String pastoralDial =
@@ -652,7 +647,7 @@ class _DailyGraceCardState extends State<DailyGraceCard> {
       'Come to me, all you who are weary and burdened, and I will give you rest. (Matthew 11:28)';
   String message = '';
   String prayer = '';
-  bool loading = true;
+    bool loading = true;
   bool expanded = false;
 
   @override
@@ -911,7 +906,6 @@ class DirectCallCard extends StatelessWidget {
   }
 }
 
-// Daily healing promise (King James Version, public domain)
 class HealingVerseCard extends StatelessWidget {
   const HealingVerseCard({super.key});
 
@@ -1286,76 +1280,4 @@ class _HomeShellState extends State<HomeShell> {
 
   static const _titles = [
     'Home',
-    'Sermons',
-    'Prayer',
-    'Community',
-    'Give',
-  ];
-
-  final _pages = const [
-    _HomePage(),
-    SermonsPage(),
-    PrayerPage(),
-    CommunityPage(),
-    GivePage(),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(_titles[_index]),
-        actions: [
-          IconButton(
-            tooltip: 'Urgent help',
-            onPressed: () => showUrgentHelp(context),
-            icon: const Icon(Icons.health_and_safety_outlined),
-          ),
-        ],
-      ),
-      body: IndexedStack(index: _index, children: _pages),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: (i) => setState(() => _index = i),
-        destinations: const [
-          NavigationDestination(
-              icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.home),
-              label: 'Home'),
-          NavigationDestination(
-              icon: Icon(Icons.play_circle_outline),
-              selectedIcon: Icon(Icons.play_circle),
-              label: 'Sermons'),
-          NavigationDestination(
-              icon: Icon(Icons.volunteer_activism_outlined),
-              selectedIcon: Icon(Icons.volunteer_activism),
-              label: 'Prayer'),
-          NavigationDestination(
-              icon: Icon(Icons.groups_outlined),
-              selectedIcon: Icon(Icons.groups),
-              label: 'Community'),
-          NavigationDestination(
-              icon: Icon(Icons.favorite_border),
-              selectedIcon: Icon(Icons.favorite),
-              label: 'Give'),
-        ],
-      ),
-    );
-  }
-}
-
-class _HomePage extends StatelessWidget {
-  const _HomePage();
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: const [
-        DailyGraceCard(),
-        DirectCallCard(),
-        HealingVerseCard(),
-      ],
-    );
-  }
-}
+ 
