@@ -18,14 +18,13 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
-  # ✅ ADD THIS PACKAGE
   flutter_launcher_icons: ^0.14.4
 
-# ✅ ADD THIS CONFIGURATION
 flutter_launcher_icons:
-  android: "launcher_icon"
+  android: true
   ios: true
-  image_path: "assets/images/icon.png"
+  # ✅ CORRECTED PATH HERE
+  image_path: "assets/icon.png"
   min_sdk_android: 21
 
 flutter:
@@ -33,3 +32,4 @@ flutter:
   
   assets:
     - assets/images/pastor.png
+    - assets/icon.png # Optional, but good to include if you ever want to show the logo inside the app
