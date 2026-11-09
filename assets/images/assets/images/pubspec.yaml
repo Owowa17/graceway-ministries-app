@@ -8,3 +8,8 @@ flutter_launcher_icons:
 flutter:
   assets:
     - assets/images/
+dependencies:
+  flutter:
+    sdk: flutter
+  http: ^1.2.0
+  url_launcher: ^6.3.0
