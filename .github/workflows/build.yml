@@ -1,4 +1,4 @@
-name: Build APK 
+name: Build APK
 
 on:
   push:
@@ -30,13 +30,16 @@ jobs:
       - name: Generate missing platform folders
         run: flutter create --platforms=android .
 
-      # ✅ THIS IS THE NEW STEP: It adds the Internet permission to the Manifest
       - name: Add Internet Permission to Android Manifest
         run: |
           sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"/>' android/app/src/main/AndroidManifest.xml
 
       - name: Install dependencies
         run: flutter pub get
+
+      # ✅ THIS IS THE NEW STEP: It generates the icons
+      - name: Generate App Icons
+        run: dart run flutter_launcher_icons
 
       - name: Build APK
         run: flutter build apk --release
