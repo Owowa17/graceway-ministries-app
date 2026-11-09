@@ -7,102 +7,75 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-
+    timeout-minutes: 30
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Java 17
-        uses: actions/setup-java@v4
+      - uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
 
-      - name: Check Flutter and Java
+      - name: Point Flutter at Java 17
+        run: flutter config --jdk-dir "$JAVA_HOME"
+
+      - name: Back up my files
         run: |
-          flutter --version
-          java -version
-          flutter doctor -v
+          mkdir -p /tmp/keep
+          cp -r lib /tmp/keep/lib
+          cp pubspec.yaml /tmp/keep/pubspec.yaml
 
-      - name: Generate Android project if missing
+      - run: flutter create . --platforms=android --project-name=graceway_app
+
+      - name: Restore my files
         run: |
-          if [ ! -d android ]; then
-            flutter create . \
-              --platforms=android \
-              --project-name=graceway_app
-          fi
+          cp -r /tmp/keep/lib/. lib/
+          cp /tmp/keep/pubspec.yaml pubspec.yaml
 
-      - name: Setup Gradle cache
-        uses: gradle/actions/setup-gradle@v4
+      - name: Allow internet access
+        run: sed -i 's|<application|<uses-permission android:name="android.permission.INTERNET"/>\n    <application|' android/app/src/main/AndroidManifest.xml
 
-      - name: Install dependencies
-        run: |
-          flutter clean
-          flutter pub get
-          flutter pub add http
-          flutter pub add url_launcher
+      - run: flutter pub add http
+      - run: flutter pub add url_launcher
+      - run: flutter pub get
 
-      - name: Configure Internet permission
-        run: |
-          MANIFEST="android/app/src/main/AndroidManifest.xml"
-          if ! grep -q 'android.permission.INTERNET' "$MANIFEST"; then
-            sed -i '/<application/i\    <uses-permission android:name="android.permission.INTERNET"/>' "$MANIFEST"
-          fi
-
-      # 👇 Failsafe added: If the image is corrupt, it warns but DOES NOT crash the build.
-      - name: Generate app icon (failsafe)
+      - name: App icon (never blocks the build)
+        continue-on-error: true
         run: |
           if [ -s assets/images/icon.png ]; then
+            python3 -m pip install --quiet pillow
+            python3 - <<'PY'
+          from PIL import Image
+          p = 'assets/images/icon.png'
+          im = Image.open(p).convert('RGB')
+          w, h = im.size
+          s = max(w, h)
+          bg = Image.new('RGB', (s, s), 'white')
+          bg.paste(im, ((s - w) // 2, (s - h) // 2))
+          bg.resize((1024, 1024)).save(p, 'PNG')
+          print('icon re-saved as PNG from', w, 'x', h)
+          PY
             flutter pub add --dev flutter_launcher_icons
-            cat > flutter_launcher_icons.yaml <<'EOF'
-          flutter_launcher_icons:
-            android: true
-            ios: false
-            image_path: "assets/images/icon.png"
-          EOF
-            dart run flutter_launcher_icons || echo "⚠️ WARNING: Icon generation failed. Image likely corrupted. Continuing build..."
+            printf 'flutter_launcher_icons:\n  android: true\n  ios: false\n  image_path: "assets/images/icon.png"\n' > flutter_launcher_icons.yaml
+            dart run flutter_launcher_icons
           fi
 
-      # 👇 CRITICAL: Fixes the Gradle/AGP version crashes
-      - name: Fix Gradle & AGP Versions
+      - name: Build APK (retries on network errors)
         run: |
-          sed -i 's|distributionUrl=.*|distributionUrl=https\\://services.gradle.org/distributions/gradle-8.10.2-all.zip|' android/gradle/wrapper/gradle-wrapper.properties
-          
-          if [ -f android/settings.gradle.kts ]; then
-            sed -i 's|id("com.android.application") version ".*"|id("com.android.application") version "8.7.3"|' android/settings.gradle.kts
-          elif [ -f android/settings.gradle ]; then
-            sed -i 's|id "com.android.application" version ".*"|id "com.android.application" version "8.7.3"|' android/settings.gradle
-          fi
-          
-          echo "android.newDsl=false" >> android/gradle.properties
-          echo "android.builtInKotlin=false" >> android/gradle.properties
+          for i in 1 2 3; do
+            flutter build apk --release --split-per-abi --target-platform android-arm64 && exit 0
+            echo "Attempt $i failed, retrying in 20 seconds..."
+            sleep 20
+          done
+          exit 1
 
-      # 👇 CRITICAL: Uses debug signing so release build doesn't fail looking for a keystore
-      - name: Configure Debug Signing for Release
-        run: |
-          BUILD_FILE=""
-          if [ -f android/app/build.gradle ]; then BUILD_FILE="android/app/build.gradle";
-          elif [ -f android/app/build.gradle.kts ]; then BUILD_FILE="android/app/build.gradle.kts"; fi
-          if [ -n "$BUILD_FILE" ]; then
-            sed -i 's/signingConfig = signingConfigs.release/signingConfig = signingConfigs.debug/' "$BUILD_FILE"
-            sed -i 's/signingConfig = signingConfigs.getByName("release")/signingConfig = signingConfigs.getByName("debug")/' "$BUILD_FILE"
-          fi
-
-      - name: Build Android APK
-        run: |
-          flutter build apk \
-            --release \
-            --target-platform android-arm64
-
-      - name: Upload APK
-        uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v4
         with:
-          name: graceway-app
+          name: graceway-app-compact
           path: build/app/outputs/flutter-apk/*.apk
           if-no-files-found: error
