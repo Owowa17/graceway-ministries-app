@@ -27,9 +27,13 @@ jobs:
           channel: 'stable'
           cache: true
 
-      # ✅ THIS IS THE MAGIC LINE: It generates the missing Android folder!
       - name: Generate missing platform folders
         run: flutter create --platforms=android .
+
+      # ✅ THIS IS THE NEW STEP: It adds the Internet permission to the Manifest
+      - name: Add Internet Permission to Android Manifest
+        run: |
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET"/>' android/app/src/main/AndroidManifest.xml
 
       - name: Install dependencies
         run: flutter pub get
