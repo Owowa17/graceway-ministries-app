@@ -1,13 +1,26 @@
-      - name: Generate app icon
-        run: |
-          if [ -s assets/images/icon.png ] && grep -q 'flutter_launcher_icons:' pubspec.yaml; then
-            cat > flutter_launcher_icons.yaml <<'EOF'
-          flutter_launcher_icons:
-            android: true
-            ios: false
-            image_path: "assets/images/icon.png"
-          EOF
-            dart run flutter_launcher_icons
-          else
-            echo "Icon generation skipped."
-          fi
+name: graceway_ministries_app
+description: "Graceway & Healing Ministries App"
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.6
+  http: ^1.2.0
+  url_launcher: ^6.2.6
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  
+  assets:
+    - assets/images/pastor.png
