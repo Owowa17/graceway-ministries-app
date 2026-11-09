@@ -10,7 +10,7 @@ const kBg = Color(0xFFF7F8FC);
 const kRed = Color(0xFFB3261E);
 
 // One link for prayers, devotionals, help requests and testimonies
-const kScriptUrl = 'https://script.google.com/macros/s/AKfycbyccmvbK6vy-h-g5TPjvuAwKjlqJHgSr49wlJnuef6N06H8rVjVRQBzVWWUhQgaWYJ0/exec';
+const kScriptUrl = 'https://script.google.com/macros/s/AKfycbxMqe2Pqp-QpfUrGxneG2jSVdzmfHhUIzPavApJ3hLrEZMS5PWpE6vtV-8A6lJ3MAfJ/exec';
 
 // Urgent help contacts.
 // 112 is Nigeria's toll-free national emergency number.
