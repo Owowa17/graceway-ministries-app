@@ -70,8 +70,9 @@ jobs:
         continue-on-error: true
         run: |
           if [ -s assets/images/icon.png ]; then
-            python3 -m pip install --quiet pillow
-            python3 - <<'PY'
+            python3 -m venv /tmp/iconenv
+            /tmp/iconenv/bin/pip install --quiet pillow
+            /tmp/iconenv/bin/python - <<'PY'
           from PIL import Image
           p = 'assets/images/icon.png'
           im = Image.open(p).convert('RGB')
@@ -83,8 +84,15 @@ jobs:
           print('icon re-saved as PNG from', w, 'x', h)
           PY
             flutter pub add --dev flutter_launcher_icons
-            printf 'flutter_launcher_icons:\n  android: true\n  ios: false\n  image_path: "assets/images/icon.png"\n' > flutter_launcher_icons.yaml
+            cat > flutter_launcher_icons.yaml <<'EOF'
+          flutter_launcher_icons:
+            android: true
+            ios: false
+            image_path: "assets/images/icon.png"
+          EOF
             dart run flutter_launcher_icons
+          else
+            echo "No icon file found, icon skipped."
           fi
 
       - name: Build APK (retries on network errors)
