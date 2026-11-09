@@ -1,16 +1,13 @@
-name: graceway_app
-description: Graceway Healing Ministries app
-publish_to: "none"
-version: 1.0.0+1
-
-environment:
-  sdk: ">=3.0.0 <4.0.0"
-
-dependencies:
-  flutter:
-    sdk: flutter
-
-flutter:
-  uses-material-design: true
-  assets:
-    - assets/images/
+      - name: Generate app icon
+        run: |
+          if [ -s assets/images/icon.png ] && grep -q 'flutter_launcher_icons:' pubspec.yaml; then
+            cat > flutter_launcher_icons.yaml <<'EOF'
+          flutter_launcher_icons:
+            android: true
+            ios: false
+            image_path: "assets/images/icon.png"
+          EOF
+            dart run flutter_launcher_icons
+          else
+            echo "Icon generation skipped."
+          fi
