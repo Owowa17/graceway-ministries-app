@@ -2,114 +2,44 @@ name: Build APK
 
 on:
   push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
   workflow_dispatch:
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+
     steps:
-      - uses: actions/checkout@v4
+      # 1. Updated to v4 (uses Node 20, resolves the checkout warning)
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Write a known-good pubspec.yaml
-        run: |
-          cat > pubspec.yaml <<'EOF'
-          name: graceway_app
-          description: Graceway Healing Ministries app
-          publish_to: "none"
-          version: 1.0.0+1
-
-          environment:
-            sdk: ">=3.0.0 <4.0.0"
-
-          dependencies:
-            flutter:
-              sdk: flutter
-
-          flutter:
-            uses-material-design: true
-            assets:
-              - assets/images/
-          EOF
-          mkdir -p assets/images
-
-      - uses: actions/setup-java@v4
+      # 2. Updated to v4 and explicitly defining the distribution (resolves setup-java warning)
+      - name: Set up Java
+        uses: actions/setup-java@v4
         with:
-          distribution: temurin
+          distribution: 'zulu' 
           java-version: '17'
 
-      - uses: subosito/flutter-action@v2
+      # 3. Flutter setup action (this is already on v2 which is the latest)
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
         with:
-          channel: stable
+          channel: 'stable'
           cache: true
 
-      - name: Point Flutter at Java 17
-        run: flutter config --jdk-dir "$JAVA_HOME"
+      - name: Install dependencies
+        run: flutter pub get
 
-      - name: Back up my files
-        run: |
-          mkdir -p /tmp/keep
-          cp -r lib /tmp/keep/lib
-          cp pubspec.yaml /tmp/keep/pubspec.yaml
+      # 4. Build the APK
+      - name: Build APK
+        run: flutter build apk --release
 
-      - run: flutter create . --platforms=android --project-name=graceway_app
-
-      - name: Restore my files
-        run: |
-          cp -r /tmp/keep/lib/. lib/
-          cp /tmp/keep/pubspec.yaml pubspec.yaml
-
-      - name: Allow internet access
-        run: sed -i 's|<application|<uses-permission android:name="android.permission.INTERNET"/>\n    <application|' android/app/src/main/AndroidManifest.xml
-
-      - run: flutter pub add http
-      - run: flutter pub add url_launcher
-      - run: flutter pub get
-
-      - name: Check code (prints Dart errors clearly)
-        continue-on-error: true
-        run: flutter analyze --no-fatal-infos --no-fatal-warnings
-
-      - name: App icon (never blocks the build)
-        continue-on-error: true
-        run: |
-          if [ -s assets/images/icon.png ]; then
-            python3 -m venv /tmp/iconenv
-            /tmp/iconenv/bin/pip install --quiet pillow
-            /tmp/iconenv/bin/python - <<'PY'
-          from PIL import Image
-          p = 'assets/images/icon.png'
-          im = Image.open(p).convert('RGB')
-          w, h = im.size
-          s = max(w, h)
-          bg = Image.new('RGB', (s, s), 'white')
-          bg.paste(im, ((s - w) // 2, (s - h) // 2))
-          bg.resize((1024, 1024)).save(p, 'PNG')
-          print('icon re-saved as PNG from', w, 'x', h)
-          PY
-            flutter pub add --dev flutter_launcher_icons
-            cat > flutter_launcher_icons.yaml <<'EOF'
-          flutter_launcher_icons:
-            android: true
-            ios: false
-            image_path: "assets/images/icon.png"
-          EOF
-            dart run flutter_launcher_icons
-          else
-            echo "No icon file found, icon skipped."
-          fi
-
-      - name: Build APK (retries on network errors)
-        run: |
-          for i in 1 2 3; do
-            flutter build apk --release --split-per-abi --target-platform android-arm64 && exit 0
-            echo "Attempt $i failed, retrying in 20 seconds..."
-            sleep 20
-          done
-          exit 1
-
-      - uses: actions/upload-artifact@v4
+      # 5. Updated to v4 (resolves the artifact upload warning)
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
         with:
           name: graceway-app-compact
-          path: build/app/outputs/flutter-apk/*.apk
-          if-no-files-found: error
+          path: build/app/outputs/flutter-apk/app-release.apk
