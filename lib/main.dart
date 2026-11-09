@@ -14,7 +14,7 @@ const kBg = Color(0xFFF7F8FC);
 const kRed = Color(0xFFB3261E);
 
 const kScriptUrl =
-    'https://script.google.com/macros/s/AKfycbyccmvbK6vy-h-g5TPjvuAwKjlqJHgSr49wlJnuef6N06H8rVjVRQBzVWWUhQgaWYJ0/exec';
+    'https://script.google.com/macros/s/AKfycbyvRxvHyIKPnAon0G_7i4KlJ85EaN56AjxVHoJHfQQ_sybw6QTnRZSQ3a_2sq1TIglm/exec';
 
 const kEmergencyNumber = '112';
 const kPastoralPhone = '08120174348';
