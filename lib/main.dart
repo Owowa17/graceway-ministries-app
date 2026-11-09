@@ -657,26 +657,36 @@ class _DailyGraceCardState extends State<DailyGraceCard> {
   }
 
   Future<void> _load() async {
-    try {
-      final res = await http
-          .get(Uri.parse(kScriptUrl))
-          .timeout(const Duration(seconds: 15));
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body) as Map<String, dynamic>;
-        final v = (data['verse'] ?? '').toString();
-        if (v.isNotEmpty && mounted) {
-          setState(() {
-            title = (data['title'] ?? '').toString();
-            verse = v;
-            message = (data['message'] ?? '').toString();
-            prayer = (data['prayer'] ?? '').toString();
-          });
-        }
-      }
-    } catch (_) {}
-    if (mounted) setState(() => loading = false);
-  }
+  try {
+    final res = await http
+        .get(Uri.parse(kScriptUrl))
+        .timeout(const Duration(seconds: 15));
+    
+    // This will print to the debug console (if you are running via VS Code)
+    print("STATUS CODE: ${res.statusCode}");
+    print("RESPONSE: ${res.body}");
 
+    if (res.statusCode == 200) {
+      final data = jsonDecode(res.body) as Map<String, dynamic>;
+      final v = (data['verse'] ?? '').toString();
+      if (v.isNotEmpty && mounted) {
+        setState(() {
+          title = (data['title'] ?? '').toString();
+          verse = v;
+          message = (data['message'] ?? '').toString();
+          prayer = (data['prayer'] ?? '').toString();
+        });
+      }
+    } else {
+      // This will show a red popup at the bottom of the app if it fails
+      if (mounted) say(context, "Server Error: ${res.statusCode}");
+    }
+  } catch (e) {
+    // This will show the exact error if the internet drops or JSON is invalid
+    if (mounted) say(context, "Network Error: $e");
+  }
+  if (mounted) setState(() => loading = false);
+}
   Future<void> _share() async {
     final text =
         'DAILY GRACE\n\n$title\n\n$verse\n\n$message\n\nPrayer:\n$prayer\n\n- Graceway & Healing Ministries';
