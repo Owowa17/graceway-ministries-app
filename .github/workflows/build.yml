@@ -45,45 +45,64 @@ jobs:
         run: |
           flutter clean
           flutter pub get
+          flutter pub add http
+          flutter pub add url_launcher
 
       - name: Configure Internet permission
         run: |
           MANIFEST="android/app/src/main/AndroidManifest.xml"
-
           if ! grep -q 'android.permission.INTERNET' "$MANIFEST"; then
             sed -i '/<application/i\    <uses-permission android:name="android.permission.INTERNET"/>' "$MANIFEST"
           fi
 
-      - name: Generate app icon
+      # 👇 Failsafe added: If the image is corrupt, it warns but DOES NOT crash the build.
+      - name: Generate app icon (failsafe)
         run: |
           if [ -s assets/images/icon.png ]; then
-            dart run flutter_launcher_icons
-          else
-            echo "No app icon found. Using default icon."
+            flutter pub add --dev flutter_launcher_icons
+            cat > flutter_launcher_icons.yaml <<'EOF'
+          flutter_launcher_icons:
+            android: true
+            ios: false
+            image_path: "assets/images/icon.png"
+          EOF
+            dart run flutter_launcher_icons || echo "⚠️ WARNING: Icon generation failed. Image likely corrupted. Continuing build..."
           fi
 
-      - name: Build APK and capture errors
+      # 👇 CRITICAL: Fixes the Gradle/AGP version crashes
+      - name: Fix Gradle & AGP Versions
         run: |
-          set -o pipefail
+          sed -i 's|distributionUrl=.*|distributionUrl=https\\://services.gradle.org/distributions/gradle-8.10.2-all.zip|' android/gradle/wrapper/gradle-wrapper.properties
+          
+          if [ -f android/settings.gradle.kts ]; then
+            sed -i 's|id("com.android.application") version ".*"|id("com.android.application") version "8.7.3"|' android/settings.gradle.kts
+          elif [ -f android/settings.gradle ]; then
+            sed -i 's|id "com.android.application" version ".*"|id "com.android.application" version "8.7.3"|' android/settings.gradle
+          fi
+          
+          echo "android.newDsl=false" >> android/gradle.properties
+          echo "android.builtInKotlin=false" >> android/gradle.properties
 
+      # 👇 CRITICAL: Uses debug signing so release build doesn't fail looking for a keystore
+      - name: Configure Debug Signing for Release
+        run: |
+          BUILD_FILE=""
+          if [ -f android/app/build.gradle ]; then BUILD_FILE="android/app/build.gradle";
+          elif [ -f android/app/build.gradle.kts ]; then BUILD_FILE="android/app/build.gradle.kts"; fi
+          if [ -n "$BUILD_FILE" ]; then
+            sed -i 's/signingConfig = signingConfigs.release/signingConfig = signingConfigs.debug/' "$BUILD_FILE"
+            sed -i 's/signingConfig = signingConfigs.getByName("release")/signingConfig = signingConfigs.getByName("debug")/' "$BUILD_FILE"
+          fi
+
+      - name: Build Android APK
+        run: |
           flutter build apk \
             --release \
-            --target-platform android-arm64 \
-            --verbose 2>&1 | tee build.log
+            --target-platform android-arm64
 
       - name: Upload APK
-        if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: graceway-ministries-apk
+          name: graceway-app
           path: build/app/outputs/flutter-apk/*.apk
           if-no-files-found: error
-
-      - name: Upload diagnostic logs
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: graceway-build-logs
-          path: build.log
-          if-no-files-found: ignore
-          
