@@ -1280,4 +1280,77 @@ class _HomeShellState extends State<HomeShell> {
   
   static const _titles = [
     'Home',
+    'Sermons',
+    'Prayer',
+    'Community',
+    'Give',
+  ];
+
+  final _pages = const [
+    _HomePage(),
+    SermonsPage(),
+    PrayerPage(),
+    CommunityPage(),
+    GivePage(),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(_titles[_index]),
+        actions: [
+          IconButton(
+            tooltip: 'Urgent help',
+            onPressed: () => showUrgentHelp(context),
+            icon: const Icon(Icons.health_and_safety_outlined),
+          ),
+        ],
+      ),
+      body: IndexedStack(index: _index, children: _pages),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _index,
+        onDestinationSelected: (i) => setState(() => _index = i),
+        destinations: const [
+          NavigationDestination(
+              icon: Icon(Icons.home_outlined),
+              selectedIcon: Icon(Icons.home),
+              label: 'Home'),
+          NavigationDestination(
+              icon: Icon(Icons.play_circle_outline),
+              selectedIcon: Icon(Icons.play_circle),
+              label: 'Sermons'),
+          NavigationDestination(
+              icon: Icon(Icons.volunteer_activism_outlined),
+              selectedIcon: Icon(Icons.volunteer_activism),
+              label: 'Prayer'),
+          NavigationDestination(
+              icon: Icon(Icons.groups_outlined),
+              selectedIcon: Icon(Icons.groups),
+              label: 'Community'),
+          NavigationDestination(
+              icon: Icon(Icons.favorite_border),
+              selectedIcon: Icon(Icons.favorite),
+              label: 'Give'),
+        ],
+      ),
+    );
+  }
+}
+
+class _HomePage extends StatelessWidget {
+  const _HomePage();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: const [
+        DailyGraceCard(),
+        DirectCallCard(),
+        HealingVerseCard(),
+      ],
+    );
+  }
+}
  
