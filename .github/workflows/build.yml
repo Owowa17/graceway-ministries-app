@@ -11,6 +11,28 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Write a known-good pubspec.yaml
+        run: |
+          cat > pubspec.yaml <<'EOF'
+          name: graceway_app
+          description: Graceway Healing Ministries app
+          publish_to: "none"
+          version: 1.0.0+1
+
+          environment:
+            sdk: ">=3.0.0 <4.0.0"
+
+          dependencies:
+            flutter:
+              sdk: flutter
+
+          flutter:
+            uses-material-design: true
+            assets:
+              - assets/images/
+          EOF
+          mkdir -p assets/images
+
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
