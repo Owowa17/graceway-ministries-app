@@ -9,41 +9,43 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
       - uses: subosito/flutter-action@v2
         with:
           channel: stable
           cache: true
-          
+
+      - name: Point Flutter at Java 17
+        run: flutter config --jdk-dir "$JAVA_HOME"
+
       - name: Back up my files
         run: |
           mkdir -p /tmp/keep
           cp -r lib /tmp/keep/lib
           cp pubspec.yaml /tmp/keep/pubspec.yaml
-          
+
       - run: flutter create . --platforms=android --project-name=graceway_app
-      
-      # 👇 THIS IS THE FIX: Forces a stable Gradle URL to prevent 504 Timeouts
-      - name: Fix Gradle Download URL
-        run: |
-          sed -i 's|distributionUrl=.*|distributionUrl=https\\://services.gradle.org/distributions/gradle-8.10.2-all.zip|' android/gradle/wrapper/gradle-wrapper.properties
-          
-      # 👇 This caches Gradle for future builds to make them much faster
+
       - name: Setup Gradle Cache
         uses: gradle/gradle-build-action@v3
-        
+
       - name: Restore my files
         run: |
           cp -r /tmp/keep/lib/. lib/
           cp /tmp/keep/pubspec.yaml pubspec.yaml
-          
+
       - name: Allow internet access
         run: sed -i 's|<application|<uses-permission android:name="android.permission.INTERNET"/>\n    <application|' android/app/src/main/AndroidManifest.xml
-        
+
       - run: flutter pub add http
       - run: flutter pub add url_launcher
       - run: flutter pub get
-      
+
       - name: Generate app icon
         run: |
           if [ -s assets/images/icon.png ]; then
@@ -51,9 +53,16 @@ jobs:
             printf 'flutter_launcher_icons:\n  android: true\n  ios: false\n  image_path: "assets/images/icon.png"\n' > flutter_launcher_icons.yaml
             dart run flutter_launcher_icons || echo "Icon skipped"
           fi
-          
-      - run: flutter build apk --release --split-per-abi --target-platform android-arm64
-      
+
+      - name: Build APK (retries on network errors)
+        run: |
+          for i in 1 2 3; do
+            flutter build apk --release --split-per-abi --target-platform android-arm64 && exit 0
+            echo "Attempt $i failed, retrying in 20 seconds..."
+            sleep 20
+          done
+          exit 1
+
       - uses: actions/upload-artifact@v4
         with:
           name: graceway-app-compact
