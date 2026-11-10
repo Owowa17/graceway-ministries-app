@@ -1,125 +1,247 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Graceway & Healing Ministries</title>
-    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap" rel="stylesheet">
-    <style>
-        :root {
-            --k-blue: #14307A;
-            --k-gold: #C9A24B;
-            --k-bg: #F7F8FC;
-        }
-        body {
-            font-family: 'Montserrat', sans-serif;
-            margin: 0;
-            padding: 0;
-            background-color: var(--k-bg);
-            color: #333;
-            text-align: center;
-        }
-        .hero {
-            background-color: var(--k-blue);
-            color: white;
-            padding: 60px 20px;
-            border-bottom: 5px solid var(--k-gold);
-        }
-        .hero img {
-            width: 120px;
-            height: 120px;
-            border-radius: 20px;
-            border: 3px solid var(--k-gold);
-            margin-bottom: 20px;
-            background-color: white;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-        h1 { margin: 0; font-size: 28px; letter-spacing: 1px; }
-        .subtitle { color: var(--k-gold); font-weight: 600; font-size: 14px; letter-spacing: 2px; margin-bottom: 20px; text-transform: uppercase;}
-        .verse { font-style: italic; max-width: 600px; margin: 0 auto 30px auto; font-size: 16px; line-height: 1.6; padding: 0 20px;}
-        .btn-download {
-            background-color: var(--k-gold);
-            color: white;
-            text-decoration: none;
-            padding: 15px 40px;
-            border-radius: 30px;
-            font-weight: 700;
-            font-size: 18px;
-            display: inline-block;
-            transition: transform 0.2s;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-            margin-bottom: 20px;
-        }
-        .btn-download:active { transform: scale(0.95); }
-        .features {
-            padding: 40px 20px;
-            max-width: 800px;
-            margin: 0 auto;
-        }
-        .feature-card {
-            background: white;
-            border: 1px solid rgba(201, 162, 75, 0.4);
-            border-radius: 16px;
-            padding: 20px;
-            margin-bottom: 15px;
-            text-align: left;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-        }
-        .feature-card h3 { color: var(--k-blue); margin-top: 0; font-size: 18px; }
-        .feature-card p { margin-bottom: 0; font-size: 14px; line-height: 1.5; color: #555;}
-        .instructions {
-            background-color: rgba(201, 162, 75, 0.15);
-            padding: 20px;
-            border-radius: 10px;
-            font-size: 13px;
-            color: #444;
-            margin-top: 20px;
-            text-align: left;
-            border-left: 4px solid var(--k-gold);
-        }
-        footer {
-            padding: 30px 20px;
-            font-size: 12px;
-            color: #777;
-            background-color: #eee;
-            margin-top: 40px;
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Graceway &amp; Healing Ministries: Download the app</title>
+  <meta name="description" content="The free Graceway app brings the daily devotional, prayer requests, testimonies and pastoral care to your Android phone.">
+  <meta name="theme-color" content="#0C2260">
+
+  <!-- Link preview when the page is shared on WhatsApp. -->
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Graceway &amp; Healing Ministries app">
+  <meta property="og:description" content="A word for every day, and a family to walk with. Free for Android.">
+  <meta property="og:image" content="https://github.com/Owowa17/graceway-ministries-app/blob/main/assets/icon.png?raw=true">
+  <meta property="og:url" content="https://owowa17.github.io/graceway-ministries-app/">
+
+  <link rel="icon" href="https://github.com/Owowa17/graceway-ministries-app/blob/main/assets/icon.png?raw=true">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,600;0,700;1,500&family=Source+Sans+3:wght@400;600;700&display=swap" rel="stylesheet">
+
+  <style>
+    :root {
+      --blue: #14307A;
+      --navy: #0C2260;
+      --gold: #C9A24B;
+      --gold-text: #8A6A1F;
+      --paper: #F7F8FC;
+      --ink: #1B2233;
+      --muted: #4A5368;
+    }
+    * { box-sizing: border-box; }
+    html { -webkit-text-size-adjust: 100%; }
+    body {
+      margin: 0;
+      background: var(--paper);
+      color: var(--ink);
+      font-family: 'Source Sans 3', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+      font-size: 18px;
+      line-height: 1.55;
+    }
+    h1, h2 {
+      font-family: 'Cormorant Garamond', Georgia, 'Times New Roman', serif;
+      font-weight: 700;
+      line-height: 1.12;
+      margin: 0;
+    }
+    a:focus-visible, button:focus-visible {
+      outline: 3px solid var(--gold);
+      outline-offset: 3px;
+    }
+
+    /* ---------- hero ---------- */
+    .hero {
+      background: var(--navy);
+      color: #fff;
+      text-align: center;
+      padding: 44px 22px 48px;
+      border-bottom: 5px solid var(--gold);
+    }
+    .hero img {
+      width: 104px;
+      height: 104px;
+      border-radius: 24px;
+      border: 2px solid var(--gold);
+      background: #fff;
+      display: block;
+      margin: 0 auto 22px;
+    }
+    .brand {
+      margin: 0 0 14px;
+      color: var(--gold);
+      font-weight: 600;
+      font-size: 17px;
+    }
+    .hero h1 {
+      font-size: clamp(34px, 9vw, 52px);
+      max-width: 16ch;
+      margin: 0 auto 14px;
+    }
+    .tagline {
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      font-style: italic;
+      font-weight: 500;
+      font-size: 22px;
+      color: #E9DDBB;
+      margin: 0 auto 28px;
+      max-width: 30ch;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 52px;
+      padding: 0 32px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: 19px;
+      text-decoration: none;
+    }
+    .btn-primary { background: var(--gold); color: var(--navy); }
+    .btn-primary:active { transform: scale(0.97); }
+    .btn-outline {
+      border: 2px solid var(--gold);
+      color: #fff;
+      font-size: 17px;
+      min-height: 48px;
+    }
+    .fine { margin: 14px 0 0; font-size: 15px; color: #C9D2EA; }
+    .secondary { margin-top: 22px; }
+
+    /* ---------- content ---------- */
+    main { max-width: 640px; margin: 0 auto; padding: 8px 22px 24px; }
+    section { padding: 34px 0 6px; }
+    h2 { font-size: 32px; color: var(--blue); margin-bottom: 14px; }
+
+    ol.steps { list-style: none; counter-reset: step; margin: 0; padding: 0; }
+    ol.steps li {
+      counter-increment: step;
+      position: relative;
+      padding: 0 0 18px 52px;
+    }
+    ol.steps li::before {
+      content: counter(step);
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--blue);
+      color: #fff;
+      font-weight: 700;
+      display: grid;
+      place-items: center;
+    }
+    ol.steps strong { color: var(--blue); }
+    .note { color: var(--muted); font-size: 16px; margin: 4px 0 0; }
+
+    dl.features { margin: 0; }
+    dl.features div { padding: 14px 0; border-top: 1px solid rgba(201, 162, 75, 0.55); }
+    dl.features div:last-child { border-bottom: 1px solid rgba(201, 162, 75, 0.55); }
+    dl.features dt { font-weight: 700; color: var(--blue); }
+    dl.features dd { margin: 2px 0 0; color: var(--muted); }
+
+    .safety {
+      border-left: 5px solid #B3261E;
+      background: #FDECEA;
+      padding: 14px 18px;
+      border-radius: 0 10px 10px 0;
+    }
+    .safety p { margin: 0; }
+    .safety strong { color: #8E1B15; }
+
+    .privacy p, .privacy li { color: var(--muted); font-size: 17px; }
+    .privacy ul { padding-left: 20px; margin: 8px 0; }
+    .privacy a { color: var(--gold-text); }
+
+    footer {
+      text-align: center;
+      padding: 28px 22px 40px;
+      color: var(--muted);
+      font-size: 15px;
+      border-top: 1px solid rgba(20, 48, 122, 0.12);
+    }
+    footer p { margin: 4px 0; }
+  </style>
 </head>
 <body>
 
-    <div class="hero">
-        <img src="https://github.com/Owowa17/graceway-ministries-app/blob/main/assets/icon.png?raw=true" alt="Graceway Logo">
-        <p class="subtitle">Graceway & Healing Ministries</p>
-        <h1>Daily Grace. Global Community.</h1>
-        <p class="verse">"Healing for the broken. Grace for the journey."</p>
-        
-        <!-- THIS IS YOUR DIRECT APK DOWNLOAD LINK -->
-        <a href="https://github.com/Owowa17/graceway-ministries-app/releases/download/v1.0/app-release.apk" class="btn-download">⬇ Download The App</a>
-        
-        <div class="instructions">
-            <strong>How to install:</strong> Tap the download button. Once the file downloads, open it and allow "Install from Unknown Sources" on your Android device to install the app.
-        </div>
-    </div>
+  <header class="hero">
+    <img src="https://github.com/Owowa17/graceway-ministries-app/blob/main/assets/icon.png?raw=true" alt="Graceway and Healing Ministries logo">
+    <p class="brand">Graceway &amp; Healing Ministries</p>
+    <h1>A word for every day. A family to walk with.</h1>
+    <p class="tagline">Healing for the broken. Grace for the journey.</p>
 
-    <div class="features">
-        <div class="feature-card">
-            <h3>✨ Daily Grace Devotional</h3>
-            <p>Start your day with a fresh Word, a powerful message, and a prayer right on your home screen.</p>
-        </div>
-        <div class="feature-card">
-            <h3>🙏🏽 Prayer & Community</h3>
-            <p>Submit private prayer requests and connect with a global family on the Grace Wall.</p>
-        </div>
-        <div class="feature-card">
-            <h3>🤝 Need Help?</h3>
-            <p>Access pastoral care and emergency contacts instantly, no matter where you are in the world.</p>
-        </div>
-    </div>
+    <!-- ✅ FIXED DOWNLOAD LINK -->
+    <a class="btn btn-primary" id="download"
+       href="https://github.com/Owowa17/graceway-ministries-app/releases/download/v1.0/app-release.apk"
+       rel="noopener">Download the app</a>
+    <p class="fine">Free for Android phones. About 50 MB.</p>
 
-    <footer>
-        &copy; 2026 Graceway & Healing Ministries. <br> Built for the Global Body of Christ.
-    </footer>
+    <p class="secondary">
+      <a class="btn btn-outline" href="https://chat.whatsapp.com/Ij16QL4YLDh0Sp3xr50VY9" rel="noopener">Join our WhatsApp family</a>
+    </p>
+  </header>
 
+  <main>
+    <section id="install">
+      <h2>Install in four steps</h2>
+      <ol class="steps">
+        <li><strong>Tap Download the app.</strong> Wait for the file to finish downloading.</li>
+        <li><strong>Open the file.</strong> Tap the download notification, or find it in your Downloads folder.</li>
+        <li>
+          <strong>Allow the install.</strong> If Android says the file is blocked, tap Settings and allow installs from your browser, then go back and tap Install.
+          <p class="note">If Google Play Protect shows a warning, tap More details, then Install anyway. The app is new and not on the Play Store yet.</p>
+        </li>
+        <li><strong>Open Graceway.</strong> You can switch the install permission off again in Settings.</li>
+      </ol>
+      <p class="note">Already have an older version? Uninstall it first, then install the new one. This page is for Android only. iPhone is not supported yet.</p>
+    </section>
+
+    <section>
+      <h2>What is inside</h2>
+      <dl class="features">
+        <div><dt>Daily Grace</dt><dd>A new scripture, message and prayer every day, with one tap to share it on WhatsApp.</dd></div>
+        <div><dt>Prayer requests</dt><dd>Send a request to our prayer team and choose to keep it private.</dd></div>
+        <div><dt>Grace Wall</dt><dd>Read testimonies of what God has done, and share your own.</dd></div>
+        <div><dt>Need help</dt><dd>Ask for help with food, rent, school fees or counselling, and find the emergency and pastoral care contacts.</dd></div>
+        <div><dt>Giving</dt><dd>Our bank details, with a button to copy the account number.</dd></div>
+      </dl>
+    </section>
+
+    <section>
+      <div class="safety">
+        <p><strong>In an emergency, call 112.</strong> The app is not watched around the clock, so use the phone for anything urgent. The 112 line may not be active in every state yet.</p>
+      </div>
+    </section>
+
+    <section class="privacy" id="privacy">
+      <h2>Your privacy</h2>
+      <p>The app needs no account and has no ads. It only keeps what you choose to type:</p>
+      <ul>
+        <li>Prayer requests, with an optional name and a private setting.</li>
+        <li>Help requests, with a phone or WhatsApp number so we can reach you.</li>
+        <li>Testimonies, which appear on the Grace Wall only after we review them.</li>
+      </ul>
+      <p>This information is stored in the ministry's Google Sheet and is seen only by our pastoral care team. Please do not type bank details or ID numbers. To ask us to remove something you sent, use the Need to talk or pray? button in the app.</p>
+    </section>
+  </main>
+
+  <footer>
+    <p><a id="share" href="https://wa.me/" rel="noopener" style="color:var(--blue);font-weight:600;">Share this page on WhatsApp</a></p>
+    <p>&copy; 2026 Graceway &amp; Healing Ministries</p>
+  </footer>
+
+  <script>
+    // Makes the share link send this page's address.
+    (function () {
+      var a = document.getElementById('share');
+      if (!a) return;
+      var text = 'Download the Graceway app: ' + location.href;
+      a.href = 'https://wa.me/?text=' + encodeURIComponent(text);
+    })();
+  </script>
 </body>
-  </html>
+    </html>
