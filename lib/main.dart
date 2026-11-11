@@ -770,7 +770,7 @@ class _DailyGraceCardState extends State<DailyGraceCard> {
                       ),
                       SizedBox(height: 2),
                       Text(
-                        'Pst. Micheal Owowa',
+                        'Micheal Owowa',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 15,
@@ -778,7 +778,7 @@ class _DailyGraceCardState extends State<DailyGraceCard> {
                         ),
                       ),
                       Text(
-                        'Lead Pastor, Graceway & Healing Ministries',
+                        'Lead Pastor, Graceway Healing Ministries',
                         style:
                             TextStyle(color: Colors.white70, fontSize: 11),
                       ),
