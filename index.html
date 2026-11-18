@@ -137,33 +137,30 @@
     ol.steps strong { color: var(--blue); }
     .note { color: var(--muted); font-size: 16px; margin: 4px 0 0; }
 
-    /* ---------- book offer ---------- */
+    /* ---------- store banner ---------- */
     .book { text-align: center; }
-    .book img {
+    .book .banner {
+      display: block;
+      border: 3px solid var(--gold);
+      border-radius: 18px;
+      overflow: hidden;
+      background: var(--navy);
+      box-shadow: 0 10px 28px rgba(12, 34, 96, 0.28);
+      margin: 0 auto 16px;
+    }
+    .book .banner img {
       display: block;
       width: 100%;
-      max-width: 420px;
       height: auto;
-      margin: 0 auto 16px;
-      border-radius: 14px;
-      border: 2px solid var(--gold);
     }
-    .book .note { margin: 0 auto 18px; max-width: 34ch; }
+    .book .btn { display: flex; width: 100%; font-size: 20px; }
+    .book .note { margin: 12px auto 0; max-width: 36ch; }
 
     dl.features { margin: 0; }
     dl.features div { padding: 14px 0; border-top: 1px solid rgba(201, 162, 75, 0.55); }
     dl.features div:last-child { border-bottom: 1px solid rgba(201, 162, 75, 0.55); }
     dl.features dt { font-weight: 700; color: var(--blue); }
     dl.features dd { margin: 2px 0 0; color: var(--muted); }
-
-    .safety {
-      border-left: 5px solid #B3261E;
-      background: #FDECEA;
-      padding: 14px 18px;
-      border-radius: 0 10px 10px 0;
-    }
-    .safety p { margin: 0; }
-    .safety strong { color: #8E1B15; }
 
     .privacy p, .privacy li { color: var(--muted); font-size: 17px; }
     .privacy ul { padding-left: 20px; margin: 8px 0; }
@@ -219,24 +216,20 @@
         <div><dt>Daily Grace</dt><dd>A new scripture, message and prayer every day, with one tap to share it on WhatsApp.</dd></div>
         <div><dt>Prayer requests</dt><dd>Send a request to our prayer team and choose to keep it private.</dd></div>
         <div><dt>Grace Wall</dt><dd>Read testimonies of what God has done, and share your own.</dd></div>
-        <div><dt>Need help</dt><dd>Ask for help with food, rent, school fees or counselling, and find the emergency and pastoral care contacts.</dd></div>
+        <div><dt>Need help</dt><dd>Ask for help with food, rent, school fees or counselling, and find the pastoral care contacts.</dd></div>
         <div><dt>Giving</dt><dd>Our bank details, with a button to copy the account number.</dd></div>
       </dl>
     </section>
 
     <section class="book" id="book">
-      <h2>Also from Graceway</h2>
-      <a href="https://selar.com/i061424955" target="_blank" rel="noopener">
-        <img src="assets/100-words-for-healing.jpg" alt="100 Words for Healing: a 10-day devotional guide, 1000 naira">
+      <h2>Also from Graceway Store</h2>
+      <a class="banner" href="https://selar.com/i061424955" target="_blank" rel="noopener">
+        <img src="assets/100wordshealing.jpg"
+             alt="100 Words for Healing in 10 Days: a daily devotional guide, 1000 naira"
+             onerror="this.parentNode.style.display='none'">
       </a>
-      <p class="note">A 10-day devotional guide. Five minutes a day to restore your peace and renew your hope.</p>
       <a class="btn btn-primary" href="https://selar.com/i061424955" target="_blank" rel="noopener">Get your copy today (&#8358;1,000)</a>
-    </section>
-
-    <section>
-      <div class="safety">
-        <p><strong>In an emergency, call 112.</strong> The app is not watched around the clock, so use the phone for anything urgent. The 112 line may not be active in every state yet.</p>
-      </div>
+      <p class="note">PDF devotional guide. Five minutes a day to restore your peace and renew your hope.</p>
     </section>
 
     <section class="privacy" id="privacy">
@@ -266,4 +259,4 @@
     })();
   </script>
 </body>
-      </html>
+        </html>
