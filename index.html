@@ -137,6 +137,19 @@
     ol.steps strong { color: var(--blue); }
     .note { color: var(--muted); font-size: 16px; margin: 4px 0 0; }
 
+    /* ---------- book offer ---------- */
+    .book { text-align: center; }
+    .book img {
+      display: block;
+      width: 100%;
+      max-width: 420px;
+      height: auto;
+      margin: 0 auto 16px;
+      border-radius: 14px;
+      border: 2px solid var(--gold);
+    }
+    .book .note { margin: 0 auto 18px; max-width: 34ch; }
+
     dl.features { margin: 0; }
     dl.features div { padding: 14px 0; border-top: 1px solid rgba(201, 162, 75, 0.55); }
     dl.features div:last-child { border-bottom: 1px solid rgba(201, 162, 75, 0.55); }
@@ -174,7 +187,7 @@
     <h1>A word for every day. A family to walk with.</h1>
     <p class="tagline">Healing for the broken. Grace for the journey.</p>
 
-    <!-- ✅ FIXED DOWNLOAD LINK -->
+    <!-- Download link -->
     <a class="btn btn-primary" id="download"
        href="https://github.com/Owowa17/graceway-ministries-app/releases/download/V1.0/app-release.apk"
        rel="noopener">Download the app</a>
@@ -211,6 +224,15 @@
       </dl>
     </section>
 
+    <section class="book" id="book">
+      <h2>Also from Graceway</h2>
+      <a href="https://selar.com/i06142495" target="_blank" rel="noopener">
+        <img src="assets/100-words-for-healing.jpg" alt="100 Words for Healing: a 10-day devotional guide, 1000 naira">
+      </a>
+      <p class="note">A 10-day devotional guide. Five minutes a day to restore your peace and renew your hope.</p>
+      <a class="btn btn-primary" href="https://selar.com/i06142495" target="_blank" rel="noopener">Get your copy today (&#8358;1,000)</a>
+    </section>
+
     <section>
       <div class="safety">
         <p><strong>In an emergency, call 112.</strong> The app is not watched around the clock, so use the phone for anything urgent. The 112 line may not be active in every state yet.</p>
@@ -244,4 +266,4 @@
     })();
   </script>
 </body>
-  </html>
+      </html>
