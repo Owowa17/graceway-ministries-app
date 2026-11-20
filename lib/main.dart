@@ -3,228 +3,31 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
-
-// ============================================================
-//  CONSTANTS
-// ============================================================
-
-const kBlue = Color(0xFF14307A);
-const kGold = Color(0xFFC9A24B);
-const kBg = Color(0xFFF7F8FC);
-const kRed = Color(0xFFB3261E);
-
-const kScriptUrl =
-    'https://script.google.com/macros/s/AKfycbzDeAVL3DEIcWlAfOmbgh7eJxATP4iqX8AG8zaS5vm-khcgFvsdfG7u9nsca1twhgyH/exec';
-
-const kEmergencyNumber = '112';
-const kPastoralPhone = '08120174348';
-
-final String pastoralDial =
-    kPastoralPhone.replaceAll(RegExp(r'[^0-9+]'), '');
-final String pastoralWhatsApp = _toWhatsApp(pastoralDial);
-
-String _toWhatsApp(String n) {
-  final d = n.replaceAll(RegExp(r'\D'), '');
-  if (d.isEmpty) return '';
-  if (d.startsWith('234')) return d;
-  if (d.startsWith('0')) return '234${d.substring(1)}';
-  return d;
-}
-
-// ============================================================
-//  HELPERS
-// ============================================================
-
-void say(BuildContext context, String msg) {
-  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
-}
-
-Future<bool> postToScript(Map<String, String> body) async {
+import 'package:video_player/video_player.dart';
+Future<Map<String, dynamic>?> getJson(String query) async {
   try {
     final res = await http
-        .post(Uri.parse(kScriptUrl), body: body)
+        .get(Uri.parse('$kScriptUrl$query'))
         .timeout(const Duration(seconds: 20));
-    return res.statusCode < 400;
+    final body = res.body.trimLeft();
+    if (res.statusCode != 200 || !body.startsWith('{')) return null;
+    return jsonDecode(body) as Map<String, dynamic>;
   } catch (_) {
-    return false;
+    return null;
   }
 }
 
-Future<bool> openUri(Uri uri) async {
-  try {
-    return await launchUrl(uri, mode: LaunchMode.externalApplication);
-  } catch (_) {
-    return false;
-  }
-}
-
-Future<void> callNumber(BuildContext context, String number) async {
-  final ok = await openUri(Uri(scheme: 'tel', path: number));
-  if (ok) return;
-  await Clipboard.setData(ClipboardData(text: number));
-  if (context.mounted) {
-    say(context, 'Could not open the dialer. Number copied: $number');
-  }
-}
-
-// ============================================================
-//  URGENT HELP SHEET
-// ============================================================
-
-void showUrgentHelp(BuildContext context) {
-  showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    backgroundColor: Colors.white,
-    builder: (sheetContext) {
-      return SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Text(
-                'Urgent help',
-                style: TextStyle(
-                  color: kRed,
-                  fontSize: 20,
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'If you or someone near you is in immediate danger, call the emergency line now. It is toll-free, but it may not be active in every state yet.',
-                style: TextStyle(fontSize: 15, height: 1.45),
-              ),
-              const SizedBox(height: 14),
-              FilledButton.icon(
-                style: FilledButton.styleFrom(
-                  backgroundColor: kRed,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-                onPressed: () => callNumber(sheetContext, kEmergencyNumber),
-                icon: const Icon(Icons.call),
-                label: const Text('Call emergency: $kEmergencyNumber'),
-              ),
-              if (pastoralDial.isNotEmpty) ...[
-                const SizedBox(height: 10),
-                OutlinedButton.icon(
-                  onPressed: () => callNumber(sheetContext, pastoralDial),
-                  icon: const Icon(Icons.support_agent),
-                  label: const Text('Call our pastoral care line'),
-                ),
-              ],
-              if (pastoralWhatsApp.isNotEmpty) ...[
-                const SizedBox(height: 10),
-                OutlinedButton.icon(
-                  onPressed: () => openUri(Uri.parse(
-                      'https://wa.me/$pastoralWhatsApp?text=Hello%2C%20I%20need%20pastoral%20care.')),
-                  icon: const Icon(Icons.chat_outlined),
-                  label: const Text('Message us on WhatsApp'),
-                ),
-              ],
-              const SizedBox(height: 16),
-              const Text(
-                'This app is not monitored around the clock. For other needs such as food, rent, school fees or counselling, use the Need Help form in the Community tab.',
-                style: TextStyle(
-                    fontSize: 13, height: 1.45, color: Colors.black54),
-              ),
-            ],
-          ),
-        ),
-      );
-    },
-  );
-}
-
-// ============================================================
-//  SECTION CARD
-// ============================================================
-
-class SectionCard extends StatelessWidget {
-  final String title;
-  final Widget child;
-  const SectionCard({super.key, required this.title, required this.child});
-
+class ShortsPage extends StatefulWidget {
+  const ShortsPage({super.key});
   @override
-  Widget build(BuildContext context) {
-    return Card(
-      color: Colors.white,
-      elevation: 0,
-      margin: const EdgeInsets.only(bottom: 14),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: kGold.withOpacity(0.4)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title,
-                style: const TextStyle(
-                    color: kBlue,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700)),
-            const SizedBox(height: 8),
-            child,
-          ],
-        ),
-      ),
-    );
-  }
+  State<ShortsPage> createState() => _ShortsPageState();
 }
 
-// ============================================================
-//  COMMUNITY — Grace Wall + Need Help
-// ============================================================
-
-class CommunityPage extends StatelessWidget {
-  const CommunityPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 2,
-      child: Column(
-        children: [
-          Container(
-            color: Colors.white,
-            child: const TabBar(
-              labelColor: kBlue,
-              unselectedLabelColor: Colors.black54,
-              indicatorColor: kGold,
-              tabs: [
-                Tab(text: 'Grace Wall'),
-                Tab(text: 'Need Help'),
-              ],
-            ),
-          ),
-          const Expanded(
-            child: TabBarView(
-              children: [
-                GraceWallTab(),
-                NeedHelpTab(),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class GraceWallTab extends StatefulWidget {
-  const GraceWallTab({super.key});
-  @override
-  State<GraceWallTab> createState() => _GraceWallTabState();
-}
-
-class _GraceWallTabState extends State<GraceWallTab> {
+class _ShortsPageState extends State<ShortsPage> {
   List<Map<String, dynamic>> items = [];
   bool loading = true;
   bool failed = false;
+  int page = 0;
 
   @override
   void initState() {
@@ -233,1134 +36,167 @@ class _GraceWallTabState extends State<GraceWallTab> {
   }
 
   Future<void> _load() async {
-    bool bad = false;
-    List<Map<String, dynamic>> next = [];
-    try {
-      final res = await http
-          .get(Uri.parse('$kScriptUrl?action=testimonies'))
-          .timeout(const Duration(seconds: 20));
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body) as Map<String, dynamic>;
-        final list = (data['items'] as List?) ?? [];
-        next =
-            list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
-      } else {
-        bad = true;
-      }
-    } catch (_) {
-      bad = true;
-    }
+    setState(() {
+      loading = true;
+      failed = false;
+    });
+    final data = await getJson('?action=shorts');
     if (!mounted) return;
     setState(() {
-      if (!bad) items = next;
-      failed = bad;
+      failed = data == null;
+      items = data == null
+          ? []
+          : ((data['items'] as List?) ?? [])
+              .map((e) => Map<String, dynamic>.from(e as Map))
+              .toList();
       loading = false;
     });
   }
 
-  void _share() {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      builder: (_) => const TestimonyForm(),
-    );
-  }
-
-  Widget _card(Map<String, dynamic> t) {
-    final name = (t['name'] ?? 'Anonymous').toString();
-    final text = (t['text'] ?? '').toString();
-    final date = (t['date'] ?? '').toString();
-    return Card(
-      color: Colors.white,
-      elevation: 0,
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: kGold.withOpacity(0.4)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(text, style: const TextStyle(fontSize: 15, height: 1.5)),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                const Icon(Icons.favorite, size: 14, color: kGold),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    date.isEmpty ? name : '$name  -  $date',
-                    style: const TextStyle(
-                      color: kBlue,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    return RefreshIndicator(
-      color: kBlue,
-      onRefresh: _load,
-      child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16),
-        children: [
-          const SectionCard(
-            title: 'Grace Wall',
-            child: Text(
-                'Read what God has done, and share your own story to encourage others.'),
-          ),
-          FilledButton.icon(
-            style: FilledButton.styleFrom(
-              backgroundColor: kBlue,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-            ),
-            onPressed: _share,
-            icon: const Icon(Icons.edit_outlined),
-            label: const Text('Share your testimony'),
-          ),
-          const SizedBox(height: 14),
-          if (loading && items.isEmpty)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.all(24),
-                child: CircularProgressIndicator(),
-              ),
-            ),
-          if (failed && items.isEmpty)
-            const SectionCard(
-              title: 'Could not load',
-              child: Text('Check your internet and pull down to try again.'),
-            ),
-          if (!loading && !failed && items.isEmpty)
-            const SectionCard(
-              title: 'Be the first',
-              child:
-                  Text('No testimonies yet. Share what God has done for you.'),
-            ),
-          for (final t in items) _card(t),
-        ],
-      ),
-    );
-  }
-}
-
-class TestimonyForm extends StatefulWidget {
-  const TestimonyForm({super.key});
-  @override
-  State<TestimonyForm> createState() => _TestimonyFormState();
-}
-
-class _TestimonyFormState extends State<TestimonyForm> {
-  final _name = TextEditingController();
-  final _text = TextEditingController();
-  bool _showName = true;
-  bool _sending = false;
-
-  @override
-  void dispose() {
-    _name.dispose();
-    _text.dispose();
-    super.dispose();
-  }
-
-  Future<void> _submit() async {
-    final text = _text.text.trim();
-    if (text.length < 15) {
-      say(context, 'Please write a little more of your testimony');
-      return;
+    if (loading) {
+      return const Center(child: CircularProgressIndicator());
     }
-    setState(() => _sending = true);
-    final ok = await postToScript({
-      'type': 'testimony',
-      'name': _name.text.trim(),
-      'text': text,
-      'showName': _showName.toString(),
-    });
-    if (!mounted) return;
-    setState(() => _sending = false);
-    final messenger = ScaffoldMessenger.of(context);
-    if (ok) {
-      Navigator.of(context).pop();
-      messenger.showSnackBar(const SnackBar(
-        content: Text('Thank you! Your testimony will appear after review.'),
-      ));
-    } else {
-      messenger.showSnackBar(const SnackBar(
-        content: Text('Could not send. Check your internet and try again.'),
-      ));
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        top: 20,
-        bottom: MediaQuery.of(context).viewInsets.bottom + 20,
-      ),
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Share your testimony',
-              style: TextStyle(
-                color: kBlue,
-                fontSize: 20,
-                fontWeight: FontWeight.w700,
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _name,
-              decoration: const InputDecoration(
-                labelText: 'Your name (optional)',
-                border: OutlineInputBorder(),
-              ),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _text,
-              maxLines: 6,
-              maxLength: 600,
-              decoration: const InputDecoration(
-                labelText: 'What has God done for you?',
-                alignLabelWithHint: true,
-                border: OutlineInputBorder(),
-              ),
-            ),
-            SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              value: _showName,
-              activeColor: kBlue,
-              title: const Text('Show my name'),
-              onChanged: (v) => setState(() => _showName = v),
-            ),
-            const Text(
-              'Testimonies are reviewed before they appear. Please do not include phone numbers, addresses or other private details.',
-              style: TextStyle(
-                  fontSize: 12, height: 1.4, color: Colors.black54),
-            ),
-            const SizedBox(height: 14),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                style: FilledButton.styleFrom(
-                  backgroundColor: kBlue,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                ),
-                onPressed: _sending ? null : _submit,
-                child: Text(_sending ? 'Sending...' : 'Submit testimony'),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class NeedHelpTab extends StatefulWidget {
-  const NeedHelpTab({super.key});
-  @override
-  State<NeedHelpTab> createState() => _NeedHelpTabState();
-}
-
-class _NeedHelpTabState extends State<NeedHelpTab> {
-  static const _needs = ['Food', 'Rent', 'School fees', 'Counselling', 'Other'];
-
-  final _name = TextEditingController();
-  final _contact = TextEditingController();
-  final _details = TextEditingController();
-  String? _need;
-  bool _urgent = false;
-  bool _sending = false;
-
-  @override
-  void dispose() {
-    _name.dispose();
-    _contact.dispose();
-    _details.dispose();
-    super.dispose();
-  }
-
-  Future<void> _submit() async {
-    if (_need == null) {
-      say(context, 'Please choose what you need help with');
-      return;
-    }
-    if (_contact.text.trim().isEmpty) {
-      say(context, 'Please add a phone or WhatsApp number so we can reach you');
-      return;
-    }
-    if (_details.text.trim().isEmpty) {
-      say(context, 'Please tell us a little about your need');
-      return;
-    }
-    setState(() => _sending = true);
-    final ok = await postToScript({
-      'type': 'help',
-      'name': _name.text.trim(),
-      'contact': _contact.text.trim(),
-      'need': _need!,
-      'details': _details.text.trim(),
-      'urgent': _urgent.toString(),
-    });
-    if (!mounted) return;
-    setState(() => _sending = false);
-    if (ok) {
-      _name.clear();
-      _contact.clear();
-      _details.clear();
-      setState(() {
-        _need = null;
-        _urgent = false;
-      });
-      say(context, 'Request received. Our care team will reach out to you.');
-    } else {
-      say(context, 'Could not send. Check your internet and try again.');
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        OutlinedButton.icon(
-          style: OutlinedButton.styleFrom(
-            foregroundColor: kRed,
-            side: const BorderSide(color: kRed, width: 1.5),
-            padding: const EdgeInsets.symmetric(vertical: 14),
-          ),
-          onPressed: () => showUrgentHelp(context),
-          icon: const Icon(Icons.health_and_safety_outlined),
-          label: const Text('Urgent help and emergency numbers'),
-        ),
-        const SizedBox(height: 14),
-        const SectionCard(
-          title: 'Ask for help',
-          child: Text(
-              'Tell us what you need. Only our care team sees this. Please do not share bank details or ID numbers.'),
-        ),
-        const Text(
-          'What do you need help with?',
-          style: TextStyle(color: kBlue, fontWeight: FontWeight.w700),
-        ),
-        const SizedBox(height: 8),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final n in _needs)
-              ChoiceChip(
-                label: Text(n),
-                selected: _need == n,
-                selectedColor: kGold.withOpacity(0.35),
-                onSelected: (v) => setState(() => _need = v ? n : null),
-              ),
-          ],
-        ),
-        const SizedBox(height: 14),
-        TextField(
-          controller: _name,
-          decoration: const InputDecoration(
-            labelText: 'Your name (optional)',
-            filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _contact,
-          keyboardType: TextInputType.phone,
-          decoration: const InputDecoration(
-            labelText: 'Phone or WhatsApp number',
-            filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _details,
-          maxLines: 5,
-          decoration: const InputDecoration(
-            labelText: 'Tell us about your need',
-            alignLabelWithHint: true,
-            filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(),
-          ),
-        ),
-        SwitchListTile(
-          contentPadding: EdgeInsets.zero,
-          value: _urgent,
-          activeColor: kRed,
-          title: const Text('This is urgent'),
-          onChanged: (v) => setState(() => _urgent = v),
-        ),
-        const SizedBox(height: 6),
-        FilledButton(
-          style: FilledButton.styleFrom(
-            backgroundColor: kBlue,
-            padding: const EdgeInsets.symmetric(vertical: 14),
-          ),
-          onPressed: _sending ? null : _submit,
-          child: Text(_sending ? 'Sending...' : 'Send request'),
-        ),
-      ],
-    );
-  }
-}
-
-// ============================================================
-//  DAILY GRACE CARD
-// ============================================================
-
-class DailyGraceCard extends StatefulWidget {
-  const DailyGraceCard({super.key});
-  @override
-  State<DailyGraceCard> createState() => _DailyGraceCardState();
-}
-
-class _DailyGraceCardState extends State<DailyGraceCard> {
-  String title = 'Rest for the weary';
-  String verse =
-      'Come to me, all you who are weary and burdened, and I will give you rest. (Matthew 11:28)';
-  String message = '';
-  String prayer = '';
-    bool loading = true;
-  bool expanded = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  Future<void> _load() async {
-  try {
-    final res = await http
-        .get(Uri.parse(kScriptUrl))
-        .timeout(const Duration(seconds: 15));
-    
-    // This will print to the debug console (if you are running via VS Code)
-    print("STATUS CODE: ${res.statusCode}");
-    print("RESPONSE: ${res.body}");
-
-    if (res.statusCode == 200) {
-      final data = jsonDecode(res.body) as Map<String, dynamic>;
-      final v = (data['verse'] ?? '').toString();
-      if (v.isNotEmpty && mounted) {
-        setState(() {
-          title = (data['title'] ?? '').toString();
-          verse = v;
-          message = (data['message'] ?? '').toString();
-          prayer = (data['prayer'] ?? '').toString();
-        });
-      }
-    } else {
-      // This will show a red popup at the bottom of the app if it fails
-      if (mounted) say(context, "Server Error: ${res.statusCode}");
-    }
-  } catch (e) {
-    // This will show the exact error if the internet drops or JSON is invalid
-    if (mounted) say(context, "Network Error: $e");
-  }
-  if (mounted) setState(() => loading = false);
-}
-  Future<void> _share() async {
-    final text =
-        'DAILY GRACE\n\n$title\n\n$verse\n\n$message\n\nPrayer:\n$prayer\n\n- Graceway & Healing Ministries';
-    await openUri(Uri.parse(
-        'https://wa.me/?text=${Uri.encodeComponent(text)}'));
-  }
-
-  Widget _label(String text) => Padding(
-        padding: const EdgeInsets.only(bottom: 4),
-        child: Text(
-          text,
-          style: const TextStyle(
-            color: kGold,
-            fontSize: 12,
-            letterSpacing: 1.5,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      );
-
-  @override
-  Widget build(BuildContext context) {
-    final long = message.length > 280;
-    return Card(
-      color: Colors.white,
-      elevation: 0,
-      margin: const EdgeInsets.only(bottom: 14),
-      clipBehavior: Clip.antiAlias,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: kGold.withOpacity(0.4)),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            color: kBlue,
-            padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            child: Row(
-              children: [
-                Container(
-                  width: 54,
-                  height: 54,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    border: Border.all(color: kGold, width: 2),
-                  ),
-                  child: ClipOval(
-                    child: Image.asset(
-                      'assets/images/pastor.png',
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => Container(
-                        color: kGold,
-                        alignment: Alignment.center,
-                        child: const Text(
-                          'MO',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 18,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                const Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'DAILY GRACE',
-                        style: TextStyle(
-                          color: kGold,
-                          letterSpacing: 2,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      SizedBox(height: 2),
-                      Text(
-                        'Micheal Owowa',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      Text(
-                        'Lead Pastor, Graceway Healing Ministries',
-                        style:
-                            TextStyle(color: Colors.white70, fontSize: 11),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          if (loading) const LinearProgressIndicator(minHeight: 2),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    color: kBlue,
-                    fontSize: 19,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                _label("TODAY'S WORD"),
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  decoration: const BoxDecoration(
-                    color: kBg,
-                    border:
-                        Border(left: BorderSide(color: kGold, width: 3)),
-                  ),
-                  child: Text(
-                    verse,
-                    style: const TextStyle(
-                      fontSize: 15,
-                      height: 1.5,
-                      fontStyle: FontStyle.italic,
-                    ),
-                  ),
-                ),
-                if (message.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  _label('MESSAGE'),
-                  Text(
-                    message,
-                    maxLines: (long && !expanded) ? 7 : null,
-                    overflow: (long && !expanded)
-                        ? TextOverflow.ellipsis
-                        : TextOverflow.visible,
-                    style:
-                        const TextStyle(fontSize: 15, height: 1.55),
-                  ),
-                  if (long)
-                    TextButton(
-                      onPressed: () =>
-                          setState(() => expanded = !expanded),
-                      child: Text(
-                          expanded ? 'Show less' : 'Read full message'),
-                    ),
-                ],
-                if (prayer.isNotEmpty) ...[
-                  const SizedBox(height: 14),
-                  _label('PRAYER'),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: kBlue.withOpacity(0.06),
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: Text(
-                      prayer,
-                      style: const TextStyle(
-                        fontSize: 15,
-                        height: 1.55,
-                        color: kBlue,
-                      ),
-                    ),
-                  ),
-                ],
-                const SizedBox(height: 8),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: TextButton.icon(
-                    onPressed: _share,
-                    icon: const Icon(Icons.share_outlined, size: 18),
-                    label: const Text('Share on WhatsApp'),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ============================================================
-//  HOME CARDS
-// ============================================================
-
-class DirectCallCard extends StatelessWidget {
-  const DirectCallCard({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      color: Colors.white,
-      elevation: 0,
-      margin: const EdgeInsets.only(bottom: 14),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: kGold.withOpacity(0.4)),
-      ),
-      child: ListTile(
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        leading: const CircleAvatar(
-          backgroundColor: kBlue,
-          child: Icon(Icons.phone_in_talk, color: Colors.white),
-        ),
-        title: const Text(
-          'Need to talk or pray?',
-          style: TextStyle(color: kBlue, fontWeight: FontWeight.w700),
-        ),
-        subtitle: const Text('Emergency and pastoral care contacts'),
-        trailing:
-            const Icon(Icons.arrow_forward_ios, size: 16, color: kGold),
-        onTap: () => showUrgentHelp(context),
-      ),
-    );
-  }
-}
-
-class HealingVerseCard extends StatelessWidget {
-  const HealingVerseCard({super.key});
-
-  static const List<Map<String, String>> _verses = [
-    {
-      'text':
-          'Heal me, O LORD, and I shall be healed; save me, and I shall be saved: for thou art my praise.',
-      'ref': 'Jeremiah 17:14'
-    },
-    {
-      'text':
-          'But he was wounded for our transgressions, he was bruised for our iniquities: the chastisement of our peace was upon him; and with his stripes we are healed.',
-      'ref': 'Isaiah 53:5'
-    },
-    {
-      'text':
-          'Bless the LORD, O my soul, and forget not all his benefits: Who forgiveth all thine iniquities; who healeth all thy diseases.',
-      'ref': 'Psalm 103:2-3'
-    },
-    {
-      'text':
-          'He sent his word, and healed them, and delivered them from their destructions.',
-      'ref': 'Psalm 107:20'
-    },
-    {
-      'text':
-          'Beloved, I wish above all things that thou mayest prosper and be in health, even as thy soul prospereth.',
-      'ref': '3 John 1:2'
-    },
-    {
-      'text':
-          'For I will restore health unto thee, and I will heal thee of thy wounds, saith the LORD.',
-      'ref': 'Jeremiah 30:17'
-    },
-    {
-      'text':
-          'He healeth the broken in heart, and bindeth up their wounds.',
-      'ref': 'Psalm 147:3'
-    },
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    final verse = _verses[DateTime.now().day % _verses.length];
-    final ref = verse['ref']!;
-    return Card(
-      color: kBlue.withOpacity(0.03),
-      elevation: 0,
-      margin: const EdgeInsets.only(bottom: 14),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: kGold.withOpacity(0.6)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                const Icon(Icons.local_hospital_outlined,
-                    color: kGold, size: 20),
-                const SizedBox(width: 8),
-                Text(
-                  'DAILY HEALING PROMISE',
-                  style: TextStyle(
-                    color: kGold.withOpacity(0.9),
-                    fontSize: 12,
-                    letterSpacing: 1.2,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Text(
-              verse['text']!,
-              style: const TextStyle(
-                fontSize: 15,
-                height: 1.5,
-                fontStyle: FontStyle.italic,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Align(
-              alignment: Alignment.centerRight,
-              child: Text(
-                '$ref (KJV)',
-                style: const TextStyle(
-                  fontWeight: FontWeight.w700,
-                  color: kBlue,
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-// ============================================================
-//  SERMONS
-// ============================================================
-
-class SermonsPage extends StatelessWidget {
-  const SermonsPage({super.key});
-
-  static const _sermons = [
-    ['Grace That Restores', 'Sunday Service'],
-    ['Walking in Healing', 'Midweek Service'],
-    ['Faith for the Journey', 'Sunday Service'],
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView.separated(
-      padding: const EdgeInsets.all(16),
-      itemCount: _sermons.length,
-      separatorBuilder: (_, __) => const SizedBox(height: 10),
-      itemBuilder: (_, i) => Card(
-        color: Colors.white,
-        elevation: 0,
-        child: ListTile(
-          leading: const CircleAvatar(
-            backgroundColor: kBlue,
-            child: Icon(Icons.play_arrow, color: Colors.white),
-          ),
-          title: Text(_sermons[i][0],
-              style: const TextStyle(fontWeight: FontWeight.w600)),
-          subtitle: Text(_sermons[i][1]),
-          trailing: const Icon(Icons.download_outlined, color: kGold),
-          onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content: Text('Audio and video playback coming soon')),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-// ============================================================
-//  GIVE
-// ============================================================
-
-class GivePage extends StatelessWidget {
-  const GivePage({super.key});
-
-  static const bank = 'Fidelity Bank';
-  static const accName = 'Micheal Owowa';
-  static const accNumber = '6011920596';
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        const SectionCard(
-          title: 'Give with a cheerful heart',
-          child: Text(
-              'Your tithes and offerings support the work of the ministry.'),
-        ),
-        SectionCard(
-          title: 'Bank transfer',
+    if (failed || items.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('Bank: $bank'),
-              const Text('Account name: $accName'),
-              const Text('Temporary ministry account'),
-              const Text('Account number: $accNumber',
-                  style: TextStyle(fontWeight: FontWeight.w700)),
-              const SizedBox(height: 10),
-              OutlinedButton.icon(
-                onPressed: () {
-                  Clipboard.setData(
-                      const ClipboardData(text: accNumber));
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Account number copied')),
-                  );
-                },
-                icon: const Icon(Icons.copy, size: 18),
-                label: const Text('Copy account number'),
+              Text(
+                failed
+                    ? 'Could not load videos. Check your internet.'
+                    : 'No videos yet. Check back soon.',
+                textAlign: TextAlign.center,
+              ),
+              const SizedBox(height: 12),
+              FilledButton(
+                style: FilledButton.styleFrom(backgroundColor: kBlue),
+                onPressed: _load,
+                child: const Text('Try again'),
               ),
             ],
           ),
         ),
-        FilledButton(
-          style: FilledButton.styleFrom(
-            backgroundColor: kGold,
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 14),
-          ),
-          onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-                content:
-                    Text('Online card payment (Paystack) coming soon')),
-          ),
-          child: const Text('Give online (coming soon)'),
-        ),
-      ],
+      );
+    }
+    return PageView.builder(
+      scrollDirection: Axis.vertical,
+      itemCount: items.length,
+      onPageChanged: (i) => setState(() => page = i),
+      itemBuilder: (_, i) => ShortItem(item: items[i], active: i == page),
     );
   }
 }
 
-// ============================================================
-//  PRAYER
-// ============================================================
-
-class PrayerPage extends StatefulWidget {
-  const PrayerPage({super.key});
+class ShortItem extends StatefulWidget {
+  final Map<String, dynamic> item;
+  final bool active;
+  const ShortItem({super.key, required this.item, required this.active});
   @override
-  State<PrayerPage> createState() => _PrayerPageState();
+  State<ShortItem> createState() => _ShortItemState();
 }
 
-class _PrayerPageState extends State<PrayerPage> {
-  final _name = TextEditingController();
-  final _request = TextEditingController();
-  bool _private = true;
-  bool _sending = false;
+class _ShortItemState extends State<ShortItem> {
+  late final VideoPlayerController _c;
+  bool _ready = false;
+  bool _bad = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _c = VideoPlayerController.networkUrl(
+        Uri.parse(widget.item['url'].toString()));
+    _c.setLooping(true);
+    _c.initialize().then((_) {
+      if (!mounted) return;
+      setState(() => _ready = true);
+      if (widget.active) _c.play();
+    }).catchError((_) {
+      if (mounted) setState(() => _bad = true);
+    });
+  }
+
+  @override
+  void didUpdateWidget(ShortItem old) {
+    super.didUpdateWidget(old);
+    if (!_ready) return;
+    widget.active ? _c.play() : _c.pause();
+  }
 
   @override
   void dispose() {
-    _name.dispose();
-    _request.dispose();
+    _c.dispose();
     super.dispose();
   }
 
-  Future<void> _submit() async {
-    if (_request.text.trim().isEmpty) {
-      say(context, 'Please write your prayer request');
-      return;
-    }
-    setState(() => _sending = true);
-    final ok = await postToScript({
-      'type': 'prayer',
-      'name': _name.text.trim(),
-      'request': _request.text.trim(),
-      'private': _private.toString(),
-    });
-    if (!mounted) return;
-    setState(() => _sending = false);
-    if (ok) {
-      _name.clear();
-      _request.clear();
-      say(context, 'Thank you. We are praying with you.');
-    } else {
-      say(context, 'Could not send. Check your internet and try again.');
-    }
-  }
-
-  Future<void> _joinWhatsApp() async {
-    final ok = await openUri(
-        Uri.parse('https://chat.whatsapp.com/Ij16QL4YLDh0Sp3xr50VY9'));
-    if (!ok && mounted) say(context, 'Could not open WhatsApp');
+  void _toggle() {
+    if (!_ready) return;
+    setState(() => _c.value.isPlaying ? _c.pause() : _c.play());
   }
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        const SectionCard(
-          title: 'Share your prayer request',
-          child: Text(
-              'Your request is handled with care and confidentiality.'),
+    final title = (widget.item['title'] ?? '').toString();
+    final caption = (widget.item['caption'] ?? '').toString();
+    final url = (widget.item['url'] ?? '').toString();
+    return GestureDetector(
+      onTap: _toggle,
+      child: Container(
+        color: Colors.black,
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            if (_ready)
+              Center(
+                child: AspectRatio(
+                  aspectRatio: _c.value.aspectRatio,
+                  child: VideoPlayer(_c),
+                ),
+              )
+            else
+              Center(
+                child: _bad
+                    ? const Text('Video unavailable',
+                        style: TextStyle(color: Colors.white70))
+                    : const CircularProgressIndicator(color: kGold),
+              ),
+            Positioned(
+              left: 16,
+              right: 16,
+              bottom: 16,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                      style: const TextStyle(
+                          color: kGold,
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700)),
+                  const SizedBox(height: 6),
+                  Text(caption,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(color: Colors.white)),
+                  const SizedBox(height: 10),
+                  OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.white,
+                      side: const BorderSide(color: kGold),
+                    ),
+                    onPressed: () => openUri(Uri.parse(
+                        'https://wa.me/?text=${Uri.encodeComponent('$title\n$url')}')),
+                    icon: const Icon(Icons.share),
+                    label: const Text('Share on WhatsApp'),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-        TextField(
-          controller: _name,
-          decoration: const InputDecoration(
-            labelText: 'Your name (optional)',
-            filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _request,
-          maxLines: 6,
-          decoration: const InputDecoration(
-            labelText: 'Prayer request',
-            alignLabelWithHint: true,
-            filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(),
-          ),
-        ),
-        SwitchListTile(
-          value: _private,
-          activeColor: kBlue,
-          title: const Text('Keep this request private'),
-          onChanged: (v) => setState(() => _private = v),
-        ),
-        const SizedBox(height: 6),
-        FilledButton(
-          style: FilledButton.styleFrom(
-            backgroundColor: kBlue,
-            padding: const EdgeInsets.symmetric(vertical: 14),
-          ),
-          onPressed: _sending ? null : _submit,
-          child: Text(_sending ? 'Sending...' : 'Send request'),
-        ),
-        const SizedBox(height: 12),
-        OutlinedButton.icon(
-          style: OutlinedButton.styleFrom(
-            foregroundColor: kBlue,
-            side: const BorderSide(color: kGold, width: 1.5),
-            padding: const EdgeInsets.symmetric(vertical: 14),
-          ),
-          onPressed: _joinWhatsApp,
-          icon: const Icon(Icons.groups_outlined),
-          label: const Text('Join our WhatsApp family'),
-        ),
-      ],
-    );
-  }
-}
-
-// ============================================================
-//  APP ENTRY POINT
-// ============================================================
-
-void main() {
-  WidgetsFlutterBinding.ensureInitialized();
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: kBlue,
-      statusBarIconBrightness: Brightness.light,
-    ),
-  );
-  runApp(const GracewayApp());
-}
-
-class GracewayApp extends StatelessWidget {
-  const GracewayApp({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Graceway & Healing Ministries',
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData(
-        useMaterial3: true,
-        scaffoldBackgroundColor: kBg,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: kBlue,
-          primary: kBlue,
-          secondary: kGold,
-        ),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: kBlue,
-          foregroundColor: Colors.white,
-          elevation: 0,
-        ),
-      ),
-      home: const HomeShell(),
-    );
-  }
-}
-
-class HomeShell extends StatefulWidget {
-  const HomeShell({super.key});
-  @override
-  State<HomeShell> createState() => _HomeShellState();
-}
-
-class _HomeShellState extends State<HomeShell> {
-  int _index = 0;
-  
-  static const _titles = [
-    'Home',
-    'Sermons',
-    'Prayer',
-    'Community',
-    'Give',
-  ];
-
-  final _pages = const [
-    _HomePage(),
-    SermonsPage(),
-    PrayerPage(),
-    CommunityPage(),
-    GivePage(),
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(_titles[_index]),
-        actions: [
-          IconButton(
-            tooltip: 'Urgent help',
-            onPressed: () => showUrgentHelp(context),
-            icon: const Icon(Icons.health_and_safety_outlined),
-          ),
-        ],
-      ),
-      body: IndexedStack(index: _index, children: _pages),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: (i) => setState(() => _index = i),
-        destinations: const [
-          NavigationDestination(
-              icon: Icon(Icons.home_outlined),
-              selectedIcon: Icon(Icons.home),
-              label: 'Home'),
-          NavigationDestination(
-              icon: Icon(Icons.play_circle_outline),
-              selectedIcon: Icon(Icons.play_circle),
-              label: 'Sermons'),
-          NavigationDestination(
-              icon: Icon(Icons.volunteer_activism_outlined),
-              selectedIcon: Icon(Icons.volunteer_activism),
-              label: 'Prayer'),
-          NavigationDestination(
-              icon: Icon(Icons.groups_outlined),
-              selectedIcon: Icon(Icons.groups),
-              label: 'Community'),
-          NavigationDestination(
-              icon: Icon(Icons.favorite_border),
-              selectedIcon: Icon(Icons.favorite),
-              label: 'Give'),
-        ],
       ),
     );
   }
 }
-
-class _HomePage extends StatelessWidget {
-  const _HomePage();
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: const [
-        DailyGraceCard(),
-        DirectCallCard(),
-        HealingVerseCard(),
-      ],
-    );
-  }
-}
- 
