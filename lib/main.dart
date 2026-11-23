@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
-import 'package:video_player/video_player.dart';
 
 // ============================================================
 //  CONSTANTS
@@ -14,8 +13,12 @@ const kGold = Color(0xFFC9A24B);
 const kBg = Color(0xFFF7F8FC);
 const kRed = Color(0xFFB3261E);
 
+// Your Ministry App Script
 const kScriptUrl =
     'https://script.google.com/macros/s/AKfycbzs2ejydfced-nWCWm6GXGLc1fXcU3V4GZX5j7NsvA8GgUDH1cUnehgOAg2_llmZVw/exec';
+
+// Your Video Bot App Script (For generating Shorts)
+const kVideoBotUrl = 'https://script.google.com/macros/s/AKfycbyzT0UsnzdTGVH0xbxNWgee2PhHxjGEmmY-UdUMPmR3hTc1DC8RJpWYHLCjIf3myeDz/exec'; 
 
 const kEmergencyNumber = '112';
 const kPastoralPhone = '08120174348';
@@ -35,6 +38,28 @@ String _toWhatsApp(String n) {
 // ============================================================
 //  HELPERS
 // ============================================================
+
+Future<void> queueVideoForGeneration(String title, String text) async {
+  try {
+    final response = await http.post(
+      Uri.parse(kVideoBotUrl),
+      body: {
+        'type': 'generate_video',
+        'title': title,
+        'text': text,
+      },
+    );
+    
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['status'] == 'success') {
+        print("✅ Video queued successfully!");
+      }
+    }
+  } catch (e) {
+    print("❌ Error queueing video: $e");
+  }
+}
 
 void say(BuildContext context, String msg) {
   ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
@@ -176,6 +201,7 @@ class SectionCard extends StatelessWidget {
     );
   }
 }
+
 // ============================================================
 //  COMMUNITY — Grace Wall + Need Help
 // ============================================================
@@ -536,8 +562,9 @@ class _NeedHelpTabState extends State<NeedHelpTab> {
     } else {
       say(context, 'Could not send. Check your internet and try again.');
     }
-  }
-  @override
+  }
+
+  @override
   Widget build(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.all(16),
@@ -631,7 +658,7 @@ class _NeedHelpTabState extends State<NeedHelpTab> {
 }
 
 // ============================================================
-//  DAILY GRACE CARD
+//  DAILY GRACE CARD (With Video Generation Button)
 // ============================================================
 
 class DailyGraceCard extends StatefulWidget {
@@ -646,79 +673,732 @@ class _DailyGraceCardState extends State<DailyGraceCard> {
       'Come to me, all you who are weary and burdened, and I will give you rest. (Matthew 11:28)';
   String message = '';
   String prayer = '';
-     }
+  bool loading = true;
+  bool expanded = false;
+  bool generatingVideo = false;
 
   @override
-  void dispose() {
-    _c.dispose();
-    super.dispose();
+  void initState() {
+    super.initState();
+    _load();
   }
 
-  void _toggle() {
-    if (!_ready) return;
-    setState(() => _c.value.isPlaying ? _c.pause() : _c.play());
+  Future<void> _load() async {
+    try {
+      final res = await http
+          .get(Uri.parse(kScriptUrl))
+          .timeout(const Duration(seconds: 15));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body) as Map<String, dynamic>;
+        final v = (data['verse'] ?? '').toString();
+        if (v.isNotEmpty && mounted) {
+          setState(() {
+            title = (data['title'] ?? '').toString();
+            verse = v;
+            message = (data['message'] ?? '').toString();
+            prayer = (data['prayer'] ?? '').toString();
+          });
+        }
+      }
+    } catch (_) {}
+    if (mounted) setState(() => loading = false);
   }
+
+  Future<void> _share() async {
+    final text =
+        'DAILY GRACE\n\n$title\n\n$verse\n\n$message\n\nPrayer:\n$prayer\n\n- Graceway & Healing Ministries';
+    await openUri(Uri.parse('https://wa.me/?text=${Uri.encodeComponent(text)}'));
+  }
+
+  Future<void> _generateVideo() async {
+    setState(() => generatingVideo = true);
+    await queueVideoForGeneration(title, '$verse\n\n$message\n\n$prayer');
+    if (mounted) {
+      setState(() => generatingVideo = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('🎬 Video queued! Check your Shorts Google Sheet in 5 minutes.'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    }
+  }
+
+  Widget _label(String text) => Padding(
+        padding: const EdgeInsets.only(bottom: 4),
+        child: Text(
+          text,
+          style: const TextStyle(
+            color: kGold,
+            fontSize: 12,
+            letterSpacing: 1.5,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      );
 
   @override
   Widget build(BuildContext context) {
-    final title = (widget.item['title'] ?? '').toString();
-    final caption = (widget.item['caption'] ?? '').toString();
-    final url = (widget.item['url'] ?? '').toString();
-    return GestureDetector(
-      onTap: _toggle,
-      child: Container(
-        color: Colors.black,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            if (_ready)
-              Center(
-                child: AspectRatio(
-                  aspectRatio: _c.value.aspectRatio,
-                  child: VideoPlayer(_c),
-                ),
-              )
-            else
-              Center(
-                child: _bad
-                    ? const Text('Video unavailable',
-                        style: TextStyle(color: Colors.white70))
-                    : const CircularProgressIndicator(color: kGold),
-              ),
-            Positioned(
-              left: 16,
-              right: 16,
-              bottom: 16,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(title,
-                      style: const TextStyle(
-                          color: kGold,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w700)),
-                  const SizedBox(height: 6),
-                  Text(caption,
-                      maxLines: 3,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(color: Colors.white)),
-                  const SizedBox(height: 10),
-                  OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      side: const BorderSide(color: kGold),
+    final long = message.length > 280;
+    return Card(
+      color: Colors.white,
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 14),
+      clipBehavior: Clip.antiAlias,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: kGold.withOpacity(0.4)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            color: kBlue,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              children: [
+                Container(
+                  width: 54,
+                  height: 54,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    border: Border.all(color: kGold, width: 2),
+                  ),
+                  child: ClipOval(
+                    child: Image.asset(
+                      'assets/images/pastor.png',
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => Container(
+                        color: kGold,
+                        alignment: Alignment.center,
+                        child: const Text(
+                          'MO',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 18,
+                          ),
+                        ),
+                      ),
                     ),
-                    onPressed: () => openUri(Uri.parse(
-                        'https://wa.me/?text=${Uri.encodeComponent('$title\n$url')}')),
-                    icon: const Icon(Icons.share),
-                    label: const Text('Share on WhatsApp'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'DAILY GRACE',
+                        style: TextStyle(
+                          color: kGold,
+                          letterSpacing: 2,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Pst. Micheal Owowa',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      Text(
+                        'Lead Pastor, Graceway Healing Ministries',
+                        style: TextStyle(color: Colors.white70, fontSize: 11),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (loading) const LinearProgressIndicator(minHeight: 2),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: kBlue,
+                    fontSize: 19,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _label("TODAY'S WORD"),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: const BoxDecoration(
+                    color: kBg,
+                    border: Border(left: BorderSide(color: kGold, width: 3)),
+                  ),
+                  child: Text(
+                    verse,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      height: 1.5,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
+                if (message.isNotEmpty) ...[
+                  const SizedBox(height: 16),
+                  _label('MESSAGE'),
+                  Text(
+                    message,
+                    maxLines: (long && !expanded) ? 7 : null,
+                    overflow: (long && !expanded)
+                        ? TextOverflow.ellipsis
+                        : TextOverflow.visible,
+                    style: const TextStyle(fontSize: 15, height: 1.55),
+                  ),
+                  if (long)
+                    TextButton(
+                      onPressed: () => setState(() => expanded = !expanded),
+                      child: Text(expanded ? 'Show less' : 'Read full message'),
+                    ),
+                ],
+                if (prayer.isNotEmpty) ...[
+                  const SizedBox(height: 14),
+                  _label('PRAYER'),
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: kBlue.withOpacity(0.06),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Text(
+                      prayer,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        height: 1.55,
+                        color: kBlue,
+                      ),
+                    ),
                   ),
                 ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-} 
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    TextButton.icon(
+                      onPressed: _share,
+                      icon: const Icon(Icons.share_outlined, size: 18),
+                      label: const Text('Share'),
+                    ),
+                    OutlinedButton.icon(
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: kGold,
+                        side: const BorderSide(color: kGold),
+                      ),
+                      onPressed: generatingVideo ? null : _generateVideo,
+                      icon: generatingVideo
+                          ? const SizedBox(
+                              width: 14,
+                              height: 14,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.movie_creation_outlined, size: 18),
+                      label: Text(generatingVideo ? 'Queuing...' : 'Make Short'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ============================================================
+//  HOME CARDS
+// ============================================================
+
+class DirectCallCard extends StatelessWidget {
+  const DirectCallCard({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Card(
+      color: Colors.white,
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 14),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: kGold.withOpacity(0.4)),
+      ),
+      child: ListTile(
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        leading: const CircleAvatar(
+          backgroundColor: kBlue,
+          child: Icon(Icons.phone_in_talk, color: Colors.white),
+        ),
+        title: const Text(
+          'Need to talk or pray?',
+          style: TextStyle(color: kBlue, fontWeight: FontWeight.w700),
+        ),
+        subtitle: const Text('Emergency and pastoral care contacts'),
+        trailing:
+            const Icon(Icons.arrow_forward_ios, size: 16, color: kGold),
+        onTap: () => showUrgentHelp(context),
+      ),
+    );
+  }
+}
+
+class HealingVerseCard extends StatelessWidget {
+  const HealingVerseCard({super.key});
+
+  static const List<Map<String, String>> _verses = [
+    {
+      'text':
+          'Heal me, O LORD, and I shall be healed; save me, and I shall be saved: for thou art my praise.',
+      'ref': 'Jeremiah 17:14'
+    },
+    {
+      'text':
+          'But he was wounded for our transgressions, he was bruised for our iniquities: the chastisement of our peace was upon him; and with his stripes we are healed.',
+      'ref': 'Isaiah 53:5'
+    },
+    {
+      'text':
+          'Bless the LORD, O my soul, and forget not all his benefits: Who forgiveth all thine iniquities; who healeth all thy diseases.',
+      'ref': 'Psalm 103:2-3'
+    },
+    {
+      'text':
+          'He sent his word, and healed them, and delivered them from their destructions.',
+      'ref': 'Psalm 107:20'
+    },
+    {
+      'text':
+          'Beloved, I wish above all things that thou mayest prosper and be in health, even as thy soul prospereth.',
+      'ref': '3 John 1:2'
+    },
+    {
+      'text':
+          'For I will restore health unto thee, and I will heal thee of thy wounds, saith the LORD.',
+      'ref': 'Jeremiah 30:17'
+    },
+    {
+      'text': 'He healeth the broken in heart, and bindeth up their wounds.',
+      'ref': 'Psalm 147:3'
+    },
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    final verse = _verses[DateTime.now().day % _verses.length];
+    final ref = verse['ref']!;
+    return Card(
+      color: kBlue.withOpacity(0.03),
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 14),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: kGold.withOpacity(0.6)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Icon(Icons.local_hospital_outlined, color: kGold, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  'DAILY HEALING PROMISE',
+                  style: TextStyle(
+                    color: kGold.withOpacity(0.9),
+                    fontSize: 12,
+                    letterSpacing: 1.2,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              verse['text']!,
+              style: const TextStyle(
+                fontSize: 15,
+                height: 1.5,
+                fontStyle: FontStyle.italic,
+                color: Colors.black87,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Align(
+              alignment: Alignment.centerRight,
+              child: Text(
+                '$ref (KJV)',
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: kBlue,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================
+//  SERMONS
+// ============================================================
+
+class SermonsPage extends StatelessWidget {
+  const SermonsPage({super.key});
+
+  static const _sermons = [
+    ['Grace That Restores', 'Sunday Service'],
+    ['Walking in Healing', 'Midweek Service'],
+    ['Faith for the Journey', 'Sunday Service'],
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView.separated(
+      padding: const EdgeInsets.all(16),
+      itemCount: _sermons.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      itemBuilder: (_, i) => Card(
+        color: Colors.white,
+        elevation: 0,
+        child: ListTile(
+          leading: const CircleAvatar(
+            backgroundColor: kBlue,
+            child: Icon(Icons.play_arrow, color: Colors.white),
+          ),
+          title: Text(_sermons[i][0],
+              style: const TextStyle(fontWeight: FontWeight.w600)),
+          subtitle: Text(_sermons[i][1]),
+          trailing: const Icon(Icons.download_outlined, color: kGold),
+          onTap: () => ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('Audio and video playback coming soon')),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================================
+//  GIVE
+// ============================================================
+
+class GivePage extends StatelessWidget {
+  const GivePage({super.key});
+
+  static const bank = 'Fidelity Bank';
+  static const accName = 'Micheal Owowa';
+  static const accNumber = '6011920596';
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        const SectionCard(
+          title: 'Give with a cheerful heart',
+          child: Text(
+              'Your tithes and offerings support the work of the ministry.'),
+        ),
+        SectionCard(
+          title: 'Bank transfer',
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Bank: $bank'),
+              const Text('Account name: $accName'),
+              const Text('Temporary ministry account'),
+              const Text('Account number: $accNumber',
+                  style: TextStyle(fontWeight: FontWeight.w700)),
+              const SizedBox(height: 10),
+              OutlinedButton.icon(
+                onPressed: () {
+                  Clipboard.setData(
+                      const ClipboardData(text: accNumber));
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Account number copied')),
+                  );
+                },
+                icon: const Icon(Icons.copy, size: 18),
+                label: const Text('Copy account number'),
+              ),
+            ],
+          ),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(
+            backgroundColor: kGold,
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+          ),
+          onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content:
+                    Text('Online card payment (Paystack) coming soon')),
+          ),
+          child: const Text('Give online (coming soon)'),
+        ),
+      ],
+    );
+  }
+}
+
+// ============================================================
+//  PRAYER
+// ============================================================
+
+class PrayerPage extends StatefulWidget {
+  const PrayerPage({super.key});
+  @override
+  State<PrayerPage> createState() => _PrayerPageState();
+}
+
+class _PrayerPageState extends State<PrayerPage> {
+  final _name = TextEditingController();
+  final _request = TextEditingController();
+  bool _private = true;
+  bool _sending = false;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _request.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (_request.text.trim().isEmpty) {
+      say(context, 'Please write your prayer request');
+      return;
+    }
+    setState(() => _sending = true);
+    final ok = await postToScript({
+      'type': 'prayer',
+      'name': _name.text.trim(),
+      'request': _request.text.trim(),
+      'private': _private.toString(),
+    });
+    if (!mounted) return;
+    setState(() => _sending = false);
+    if (ok) {
+      _name.clear();
+      _request.clear();
+      say(context, 'Thank you. We are praying with you.');
+    } else {
+      say(context, 'Could not send. Check your internet and try again.');
+    }
+  }
+
+  Future<void> _joinWhatsApp() async {
+    final ok = await openUri(
+        Uri.parse('https://chat.whatsapp.com/Ij16QL4YLDh0Sp3xr50VY9'));
+    if (!ok && mounted) say(context, 'Could not open WhatsApp');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        const SectionCard(
+          title: 'Share your prayer request',
+          child: Text(
+              'Your request is handled with care and confidentiality.'),
+        ),
+        TextField(
+          controller: _name,
+          decoration: const InputDecoration(
+            labelText: 'Your name (optional)',
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _request,
+          maxLines: 6,
+          decoration: const InputDecoration(
+            labelText: 'Prayer request',
+            alignLabelWithHint: true,
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(),
+          ),
+        ),
+        SwitchListTile(
+          value: _private,
+          activeColor: kBlue,
+          title: const Text('Keep this request private'),
+          onChanged: (v) => setState(() => _private = v),
+        ),
+        const SizedBox(height: 6),
+        FilledButton(
+          style: FilledButton.styleFrom(
+            backgroundColor: kBlue,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+          ),
+          onPressed: _sending ? null : _submit,
+          child: Text(_sending ? 'Sending...' : 'Send request'),
+        ),
+        const SizedBox(height: 12),
+        OutlinedButton.icon(
+          style: OutlinedButton.styleFrom(
+            foregroundColor: kBlue,
+            side: const BorderSide(color: kGold, width: 1.5),
+            padding: const EdgeInsets.symmetric(vertical: 14),
+          ),
+          onPressed: _joinWhatsApp,
+          icon: const Icon(Icons.groups_outlined),
+          label: const Text('Join our WhatsApp family'),
+        ),
+      ],
+    );
+  }
+}
+
+// ============================================================
+//  APP ENTRY POINT
+// ============================================================
+
+void main() {
+  WidgetsFlutterBinding.ensureInitialized();
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: kBlue,
+      statusBarIconBrightness: Brightness.light,
+    ),
+  );
+  runApp(const GracewayApp());
+}
+
+class GracewayApp extends StatelessWidget {
+  const GracewayApp({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Graceway Healing Ministries',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        useMaterial3: true,
+        scaffoldBackgroundColor: kBg,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: kBlue,
+          primary: kBlue,
+          secondary: kGold,
+        ),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: kBlue,
+          foregroundColor: Colors.white,
+          elevation: 0,
+        ),
+      ),
+      home: const HomeShell(),
+    );
+  }
+}
+
+class HomeShell extends StatefulWidget {
+  const HomeShell({super.key});
+  @override
+  State<HomeShell> createState() => _HomeShellState();
+}
+
+class _HomeShellState extends State<HomeShell> {
+  int _index = 0;
+
+  static const _titles = [
+    'Home',
+    'Sermons',
+    'Prayer',
+    'Community',
+    'Give',
+  ];
+
+  final _pages = const [
+    _HomePage(),
+    SermonsPage(),
+    PrayerPage(),
+    CommunityPage(),
+    GivePage(),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(_titles[_index]),
+        actions: [
+          IconButton(
+            tooltip: 'Urgent help',
+            onPressed: () => showUrgentHelp(context),
+            icon: const Icon(Icons.health_and_safety_outlined),
+          ),
+        ],
+      ),
+      body: IndexedStack(index: _index, children: _pages),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _index,
+        onDestinationSelected: (i) => setState(() => _index = i),
+        destinations: const [
+          NavigationDestination(
+              icon: Icon(Icons.home_outlined),
+              selectedIcon: Icon(Icons.home),
+              label: 'Home'),
+          NavigationDestination(
+              icon: Icon(Icons.play_circle_outline),
+              selectedIcon: Icon(Icons.play_circle),
+              label: 'Sermons'),
+          NavigationDestination(
+              icon: Icon(Icons.volunteer_activism_outlined),
+              selectedIcon: Icon(Icons.volunteer_activism),
+              label: 'Prayer'),
+          NavigationDestination(
+              icon: Icon(Icons.groups_outlined),
+              selectedIcon: Icon(Icons.groups),
+              label: 'Community'),
+          NavigationDestination(
+              icon: Icon(Icons.favorite_border),
+              selectedIcon: Icon(Icons.favorite),
+              label: 'Give'),
+        ],
+      ),
+    );
+  }
+}
+
+class _HomePage extends StatelessWidget {
+  const _HomePage();
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: const [
+        DailyGraceCard(),
+        DirectCallCard(),
+        HealingVerseCard(),
+      ],
+    );
+  }
+}
