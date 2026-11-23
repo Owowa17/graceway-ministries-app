@@ -15,7 +15,7 @@ const kRed = Color(0xFFB3261E);
 
 // Your Ministry App Script
 const kScriptUrl =
-    'https://script.google.com/macros/s/AKfycbzs2ejydfced-nWCWm6GXGLc1fXcU3V4GZX5j7NsvA8GgUDH1cUnehgOAg2_llmZVw/exec';
+    'https://script.google.com/macros/s/AKfycbyzT0UsnzdTGVH0xbxNWgee2PhHxjGEmmY-UdUMPmR3hTc1DC8RJpWYHLCjIf3myeDz/exec';
 
 // Your Video Bot App Script (For generating Shorts)
 const kVideoBotUrl = 'https://script.google.com/macros/s/AKfycbyzT0UsnzdTGVH0xbxNWgee2PhHxjGEmmY-UdUMPmR3hTc1DC8RJpWYHLCjIf3myeDz/exec'; 
