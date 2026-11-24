@@ -1,7 +1,7 @@
-import 'dart:convert'; // ✅ Added for JSON decoding
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:http/http.dart' as http; // ✅ Added for fetching devotional
+import 'package:http/http.dart' as http;
 import 'helpers.dart';
 import 'community.dart';
 
@@ -34,16 +34,16 @@ class GracewayApp extends StatelessWidget {
   }
 }
 
-// ✅ FIXED: Path changed to 'assets/' and default file to 'icon.png'
 class LogoImage extends StatelessWidget {
   final double height;
   final String file;
+  // ✅ Changed default to icon.png to match your repo
   const LogoImage({super.key, this.height = 120, this.file = 'icon.png'});
 
   @override
   Widget build(BuildContext context) {
     return Image.asset(
-      'assets/$file',
+      'assets/$file', // ✅ Points directly to assets folder
       height: height,
       errorBuilder: (_, __, ___) =>
           Icon(Icons.church, size: height * 0.6, color: kGold),
@@ -103,7 +103,7 @@ class _HomeShellState extends State<HomeShell> {
       body: _pages[_index],
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
-        indicatorColor: kGold.withValues(alpha: 0.35), // Fixed deprecation
+        indicatorColor: kGold.withValues(alpha: 0.35), // ✅ Fixed deprecation
         onDestinationSelected: (i) => setState(() => _index = i),
         destinations: const [
           NavigationDestination(icon: Icon(Icons.home_outlined), label: 'Home'),
@@ -117,7 +117,6 @@ class _HomeShellState extends State<HomeShell> {
   }
 }
 
-// ✅ FIXED: Turned into StatefulWidget to fetch from Google Script + Added Pastor Image
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -129,7 +128,9 @@ class _HomePageState extends State<HomePage> {
   String _title = 'Daily Grace';
   String _verse = '';
   String _message = 'Loading today\'s devotional...';
+  String _prayer = '';
   bool _loading = true;
+  bool _generatingVideo = false;
 
   @override
   void initState() {
@@ -150,6 +151,7 @@ class _HomePageState extends State<HomePage> {
             _title = data['title'] ?? 'Daily Grace';
             _verse = data['verse'] ?? '';
             _message = data['message'] ?? 'No message today.';
+            _prayer = data['prayer'] ?? '';
           });
         }
       }
@@ -157,6 +159,37 @@ class _HomePageState extends State<HomePage> {
       setState(() => _message = 'Could not load devotional. Check your internet.');
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _generateShort() async {
+    setState(() => _generatingVideo = true);
+    final videoText = '$_verse\n\n$_message\n\nPrayer: $_prayer';
+    
+    try {
+      final res = await http.post(
+        Uri.parse(kScriptUrl),
+        body: {
+          'type': 'generate_video',
+          'title': _title,
+          'text': videoText,
+        },
+      ).timeout(const Duration(seconds: 20));
+
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (data['status'] == 'success') {
+          say(context, '✅ Video queued! It will be ready in a few minutes.');
+        } else {
+          say(context, '❌ Failed to queue video.');
+        }
+      } else {
+        say(context, '❌ Server error. Try again.');
+      }
+    } catch (e) {
+      say(context, '❌ Network error. Check your internet.');
+    } finally {
+      if (mounted) setState(() => _generatingVideo = false);
     }
   }
 
@@ -184,7 +217,7 @@ class _HomePageState extends State<HomePage> {
           const SizedBox(height: 12),
           const Center(
             child: Text(
-              'Pst. Michael Owowa',
+              'Michael Owowa',
               style: TextStyle(color: kBlue, fontSize: 18, fontWeight: FontWeight.bold),
             ),
           ),
@@ -219,20 +252,62 @@ class _HomePageState extends State<HomePage> {
                     padding: EdgeInsets.all(16.0),
                     child: CircularProgressIndicator(color: kGold),
                   ))
-                else
+                else ...[
                   Text(
                     _message,
                     style: const TextStyle(fontSize: 15, height: 1.5),
                   ),
+                  
+                  // Prayer section
+                  if (_prayer.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Prayer',
+                      style: TextStyle(fontWeight: FontWeight.bold, color: kBlue, fontSize: 15),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      _prayer,
+                      style: const TextStyle(fontSize: 15, height: 1.5, fontStyle: FontStyle.italic),
+                    ),
+                  ],
+
+                  const Divider(height: 32),
+
+                  // Video Generation & Share Buttons
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      TextButton.icon(
+                        onPressed: _generatingVideo ? null : _generateShort,
+                        icon: _generatingVideo 
+                            ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: kBlue))
+                            : const Icon(Icons.videocam_outlined, color: kBlue),
+                        label: Text(
+                          _generatingVideo ? 'Queueing...' : 'Create Short',
+                          style: const TextStyle(color: kBlue, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                      TextButton.icon(
+                        onPressed: () {
+                          final textToShare = '$_title\n\n$_verse\n\n$_message\n\nPrayer: $_prayer';
+                          Clipboard.setData(ClipboardData(text: textToShare));
+                          say(context, 'Devotional text copied to clipboard!');
+                        },
+                        icon: const Icon(Icons.share_outlined, color: kBlue),
+                        label: const Text(
+                          'Share Text',
+                          style: TextStyle(color: kBlue, fontWeight: FontWeight.bold),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
-
-          // Announcements
-          const SectionCard(
-            title: 'Announcements',
-            child: Text('Sunday Service: 9:00 AM\nMidweek Prayer: Wednesday, 6:00 PM'),
-          ),
+          
+          // ✅ Announcements section removed as requested
         ],
       ),
     );
