@@ -640,6 +640,7 @@ class _NeedHelpTabState extends State<NeedHelpTab> {
             border: OutlineInputBorder(),
           ),
         ),
+        
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
           value: _urgent,
@@ -647,7 +648,7 @@ class _NeedHelpTabState extends State<NeedHelpTab> {
           title: const Text('This is urgent'),
           onChanged: (v) => setState(() => _urgent = v),
         ),
-                const SizedBox(height: 6),
+        const SizedBox(height: 6),
         SizedBox(
           width: double.infinity,
           child: FilledButton(
@@ -656,13 +657,18 @@ class _NeedHelpTabState extends State<NeedHelpTab> {
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
             onPressed: _sending ? null : _submit,
-            child: Text(_sending ? 'Sending...' : 'Submit Request'),
+            child: Text(
+              _sending ? 'Sending...' : 'Send help request',
+            ),
           ),
         ),
         const SizedBox(height: 20),
       ],
     );
   }
+}
+void main() {
+  runApp(const GracewayApp());
 }
 class PrayerPage extends StatefulWidget {
   const PrayerPage({super.key});
