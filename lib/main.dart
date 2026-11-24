@@ -183,7 +183,7 @@ class SectionCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 14),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: kGold.withOpacity(0.4)),
+        side: BorderSide(color: kGold.withValues(alpha: 0.4)
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -307,7 +307,7 @@ class _GraceWallTabState extends State<GraceWallTab> {
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: kGold.withOpacity(0.4)),
+        side: BorderSide(color: kGold.withValues(alpha: 0.4),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -478,7 +478,7 @@ class _TestimonyFormState extends State<TestimonyForm> {
             SwitchListTile(
               contentPadding: EdgeInsets.zero,
               value: _showName,
-              activeColor: kBlue,
+              activeThumbColor: kBlue,
               title: const Text('Show my name'),
               onChanged: (v) => setState(() => _showName = v),
             ),
@@ -602,7 +602,7 @@ class _NeedHelpTabState extends State<NeedHelpTab> {
               ChoiceChip(
                 label: Text(n),
                 selected: _need == n,
-                selectedColor: kGold.withOpacity(0.35),
+                selectedColor: kGold.withValues(alpha: 0.35),
                 onSelected: (v) => setState(() => _need = v ? n : null),
               ),
           ],
@@ -644,7 +644,7 @@ class _NeedHelpTabState extends State<NeedHelpTab> {
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
           value: _urgent,
-          activeColor: kRed,
+          activeThumbColor: kRed,
           title: const Text('This is urgent'),
           onChanged: (v) => setState(() => _urgent = v),
         ),
@@ -668,7 +668,7 @@ class _NeedHelpTabState extends State<NeedHelpTab> {
   }
 }
 void main() {
-  runApp(const gracewayministriesapp());
+    runApp(const GracewayApp());
 }
 class PrayerPage extends StatefulWidget {
   const PrayerPage({super.key});
