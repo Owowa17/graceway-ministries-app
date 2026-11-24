@@ -664,3 +664,99 @@ class _NeedHelpTabState extends State<NeedHelpTab> {
     );
   }
 }
+class PrayerPage extends StatefulWidget {
+  const PrayerPage({super.key});
+  @override
+  State<PrayerPage> createState() => _PrayerPageState();
+}
+
+class _PrayerPageState extends State<PrayerPage> {
+  final _name = TextEditingController();
+  final _request = TextEditingController();
+  bool _private = true;
+  bool _sending = false;
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _request.dispose();
+    super.dispose();
+  }
+
+  Future<void> _submit() async {
+    if (_request.text.trim().isEmpty) {
+      say(context, 'Please write your prayer request');
+      return;
+    }
+    setState(() => _sending = true);
+    final ok = await postToScript({
+      'type': 'prayer',
+      'name': _name.text.trim(),
+      'request': _request.text.trim(),
+      'private': _private.toString(),
+    });
+    if (!mounted) return;
+    setState(() => _sending = false);
+    if (ok) {
+      _name.clear();
+      _request.clear();
+      say(context, 'Thank you. We are praying with you.');
+    } else {
+      say(context, 'Could not send. Check your internet and try again.');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return ListView(
+      padding: const EdgeInsets.all(16),
+      children: [
+        const SectionCard(
+          title: 'Share your prayer request',
+          child: Text('Your request is handled with care and confidentiality.'),
+        ),
+        TextField(
+          controller: _name,
+          decoration: const InputDecoration(
+            labelText: 'Your name (optional)',
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(),
+          ),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _request,
+          maxLines: 6,
+          decoration: const InputDecoration(
+            labelText: 'Prayer request',
+            alignLabelWithHint: true,
+            filled: true,
+            fillColor: Colors.white,
+            border: OutlineInputBorder(),
+          ),
+        ),
+        SwitchListTile(
+          contentPadding: EdgeInsets.zero,
+          value: _private,
+          activeColor: kBlue,
+          title: const Text('Keep this request private'),
+          onChanged: (v) => setState(() => _private = v),
+        ),
+        const SizedBox(height: 6),
+        SizedBox(
+          width: double.infinity,
+          child: FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: kBlue,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+            ),
+            onPressed: _sending ? null : _submit,
+            child: Text(_sending ? 'Sending...' : 'Send request'),
+          ),
+        ),
+        const SizedBox(height: 20),
+      ],
+    );
+  }
+}
