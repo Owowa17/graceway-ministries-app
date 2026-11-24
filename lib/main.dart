@@ -4,10 +4,6 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:url_launcher/url_launcher.dart';
 
-// ============================================================
-//  CONSTANTS
-// ============================================================
-
 const kBlue = Color(0xFF14307A);
 const kGold = Color(0xFFC9A24B);
 const kBg = Color(0xFFF7F8FC);
@@ -15,9 +11,7 @@ const kRed = Color(0xFFB3261E);
 
 const kScriptUrl =
     'https://script.google.com/macros/s/AKfycbyzT0UsnzdTGVH0xbxNWgee2PhHxjGEmmY-UdUMPmR3hTc1DC8RJpWYHLCjIf3myeDz/exec';
-
 const kVideoBotUrl = kScriptUrl;
-
 const kEmergencyNumber = '112';
 const kPastoralPhone = '08120174348';
 
@@ -32,27 +26,15 @@ String _toWhatsApp(String n) {
   return d;
 }
 
-// ============================================================
-//  HELPERS
-// ============================================================
-
 Future<bool> queueVideoForGeneration(String title, String text) async {
   try {
     final response = await http.post(
       Uri.parse(kVideoBotUrl),
-      body: {
-        'type': 'generate_video',
-        'title': title,
-        'text': text,
-      },
+      body: {'type': 'generate_video', 'title': title, 'text': text},
     );
-
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      if (data['status'] == 'success') {
-        debugPrint('Video queued successfully!');
-        return true;
-      }
+      if (data['status'] == 'success') return true;
     }
   } catch (e) {
     debugPrint('Error queueing video: $e');
@@ -91,10 +73,6 @@ Future<void> callNumber(BuildContext context, String number) async {
     say(context, 'Could not open the dialer. Number copied: $number');
   }
 }
-
-// ============================================================
-//  URGENT HELP SHEET
-// ============================================================
 
 void showUrgentHelp(BuildContext context) {
   showModalBottomSheet<void>(
@@ -163,10 +141,6 @@ void showUrgentHelp(BuildContext context) {
   );
 }
 
-// ============================================================
-//  SECTION CARD
-// ============================================================
-
 class SectionCard extends StatelessWidget {
   final String title;
   final Widget child;
@@ -189,9 +163,7 @@ class SectionCard extends StatelessWidget {
           children: [
             Text(title,
                 style: const TextStyle(
-                    color: kBlue,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700)),
+                    color: kBlue, fontSize: 16, fontWeight: FontWeight.w700)),
             const SizedBox(height: 8),
             child,
           ],
@@ -201,13 +173,8 @@ class SectionCard extends StatelessWidget {
   }
 }
 
-// ============================================================
-//  PRAYER PAGE
-// ============================================================
-
 class PrayerPage extends StatefulWidget {
   const PrayerPage({super.key});
-
   @override
   State<PrayerPage> createState() => _PrayerPageState();
 }
@@ -308,10 +275,6 @@ class _PrayerPageState extends State<PrayerPage> {
   }
 }
 
-// ============================================================
-//  COMMUNITY — Grace Wall + Need Help
-// ============================================================
-
 class CommunityPage extends StatelessWidget {
   const CommunityPage({super.key});
 
@@ -347,136 +310,6 @@ class CommunityPage extends StatelessWidget {
   }
 }
 
-class GraceWallTab extends StatefulWidget {
-  const GraceWallTab({super.key});
-  @override
-  State<GraceWallTab> createState() => _GraceWallTabState();
-}
-
-class _GraceWallTabState extends State<GraceWallTab> {
-  List> items = [];
-  bool loading = true;
-  bool failed = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  Future<void> _load() async {
-    bool bad = false;
-    List> next = [];
-    try {
-      final uri = Uri.parse(kScriptUrl)
-          .replace(queryParameters: {'action': 'testimonies'});
-
-      final res = await http.get(uri).timeout(const Duration(seconds: 20));
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body) as Map<String, dynamic>;
-        final list = (data['items'] as List?) ?? [];
-        next = list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
-      } else {
-        bad = true;
-      }
-    } catch (_) {
-      bad = true;
-    }
-    if (!mounted) return;
-    setState(() {
-      if (!bad) items = next;
-      failed = bad;
-      loading = false;
-    });
-  }
-
-  void _share() {
-    showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.white,
-      builder: (_) => const TestimonyForm(),
-    );
-  }
-
-  Widget _card(Map<String, dynamic> t) {
-    final name = (t['name'] ?? 'Anonymous').toString();
-    final text = (t['text'] ?? '').toString();
-    final date = (t['date'] ?? '').toString();
-    return Card(
-      color: Colors.white,
-      elevation: 0,
-      margin: const EdgeInsets.only(bottom: 12),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: kGold.withValues(alpha: 0.4)),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(text, style: const TextStyle(fontSize: 15, height: 1.5)),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                const Icon(Icons.favorite, size: 14, color: kGold),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Text(
-                    date.isEmpty ? name : '$name  -  $date',
-                    style: const TextStyle(
-                      color: kBlue,
-                      fontWeight: FontWeight.w600,
-                      fontSize: 13,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-class GraceWallTab extends StatefulWidget {
-  const GraceWallTab({super.key});
-  @override
-  State<GraceWallTab> createState() => _GraceWallTabState();
-}
-
-class _GraceWallTabState extends State<GraceWallTab> {
-  List> items = [];
-  bool loading = true;
-  bool failed = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _load();
-  }
-
-  Future<void> _load() async {
-    bool bad = false;
-    List> next = [];
-    try {
-      final uri = Uri.parse(kScriptUrl)
-          .replace(queryParameters: {'action': 'testimonies'});
-      final res = await http.get(uri).timeout(const Duration(seconds: 20));
-      if (res.statusCode == 200) {
-        final data = jsonDecode(res.body) as Map<String, dynamic>;
-        final list = (data['items'] as List?) ?? [];
-        next = list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
-      } else {
-        bad = true;
-      }
-    } catch (_) {
-      bad = true;
-    }
-    if (!mounted) return;
-    setState(() {
-      if (!bad) items = next;
-      failed = bad;
 class GraceWallTab extends StatefulWidget {
   const GraceWallTab({super.key});
   @override
@@ -652,9 +485,10 @@ class _TestimonyFormState extends State<TestimonyForm> {
     });
     if (!mounted) return;
     setState(() => _sending = false);
+    final navigator = Navigator.of(context);
     final messenger = ScaffoldMessenger.of(context);
     if (ok) {
-      Navigator.of(context).pop();
+      navigator.pop();
       messenger.showSnackBar(const SnackBar(
         content: Text('Thank you! Your testimony will appear after review.'),
       ));
@@ -887,9 +721,7 @@ class _NeedHelpTabState extends State<NeedHelpTab> {
               padding: const EdgeInsets.symmetric(vertical: 14),
             ),
             onPressed: _sending ? null : _submit,
-            child: Text(
-              _sending ? 'Sending...' : 'Send help request',
-            ),
+            child: Text(_sending ? 'Sending...' : 'Send help request'),
           ),
         ),
         const SizedBox(height: 20),
@@ -897,10 +729,6 @@ class _NeedHelpTabState extends State<NeedHelpTab> {
     );
   }
 }
-
-// ============================================================
-//  MAIN APP & SHELL
-// ============================================================
 
 void main() {
   runApp(const GracewayApp());
@@ -980,10 +808,6 @@ class _HomeShellState extends State<HomeShell> {
   }
 }
 
-// ============================================================
-//  DEVOTIONAL PAGE
-// ============================================================
-
 class DevotionalPage extends StatefulWidget {
   const DevotionalPage({super.key});
   @override
@@ -1031,10 +855,14 @@ class _DevotionalPageState extends State<DevotionalPage> {
 
   String _s(String key) => (data?[key] ?? '').toString();
 
-  void _share() {
+  Future<void> _share() async {
     final msg = '${_s('title')}\n\n${_s('verse')}\n\n${_s('message')}\n\n'
         'Prayer: ${_s('prayer')}\n\n- Graceway Healing Ministries';
-    openUri(Uri.parse('https://wa.me/?text=${Uri.encodeComponent(msg)}'));
+    final ok =
+        await openUri(Uri.parse('https://wa.me/?text=${Uri.encodeComponent(msg)}'));
+    if (!ok && mounted) {
+      say(context, 'Could not open WhatsApp.');
+    }
   }
 
   @override
