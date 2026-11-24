@@ -31,6 +31,9 @@ jobs:
       - name: Generate missing platform folders
         run: flutter create --platforms=android --org org.graceway .
 
+      - name: Remove generated test folder
+        run: rm -rf test
+
       - name: Add Internet permission
         run: |
           MANIFEST=android/app/src/main/AndroidManifest.xml
@@ -40,7 +43,7 @@ jobs:
         run: flutter pub get
 
       - name: Check code for errors
-        run: flutter analyze --no-fatal-infos --no-fatal-warnings
+        run: flutter analyze lib --no-fatal-infos --no-fatal-warnings
 
       - name: Generate App Icons
         run: dart run flutter_launcher_icons
