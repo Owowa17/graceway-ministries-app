@@ -647,12 +647,7 @@ class _NeedHelpTabState extends State<NeedHelpTab> {
           title: const Text('This is urgent'),
           onChanged: (v) => setState(() => _urgent = v),
         ),
-        const SizedBox(height: 6),
-        
-                   // ✅ FIXED: Completed the cut-off section
-        
-        SizedBox(
-                  const SizedBox(height: 6),
+                const SizedBox(height: 6),
         SizedBox(
           width: double.infinity,
           child: FilledButton(
@@ -668,4 +663,4 @@ class _NeedHelpTabState extends State<NeedHelpTab> {
       ],
     );
   }
-  }
+}
