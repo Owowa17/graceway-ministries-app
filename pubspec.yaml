@@ -30,7 +30,19 @@ flutter_launcher_icons:
 flutter:
   uses-material-design: true
 
-  assets:
-    - assets/icon.png
-    # ✅ Added the images folder so LogoImage works
-    - assets/images/ 
+class LogoImage extends StatelessWidget {
+  final double height;
+  final String file;
+  // ✅ Changed default to 'icon.png' since that's your logo file
+  const LogoImage({super.key, this.height = 120, this.file = 'icon.png'});
+
+  @override
+  Widget build(BuildContext context) {
+    return Image.asset(
+      'assets/$file', // ✅ Changed to look in 'assets/' instead of 'assets/images/'
+      height: height,
+      errorBuilder: (_, __, ___) =>
+          Icon(Icons.church, size: height * 0.6, color: kGold),
+    );
+  }
+}
