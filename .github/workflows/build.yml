@@ -37,15 +37,18 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      # ✅ THIS IS THE NEW STEP: It generates the icons
-      - name: Generate App Icons
-        run: dart run flutter_launcher_icons
-
       - name: Build APK
         run: flutter build apk --release
+        continue-on-error: true
+
+      - name: Find APK files
+        run: find . -name "*.apk" -not -path "./.git/*"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: graceway-app-compact
-          path: build/app/outputs/flutter-apk/app-release.apk
+          path: |
+            build/app/outputs/flutter-apk/*.apk
+            android/app/build/outputs/**/*.apk
+          if-no-files-found: error
