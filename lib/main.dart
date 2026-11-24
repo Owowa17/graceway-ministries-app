@@ -50,12 +50,12 @@ Future<bool> queueVideoForGeneration(String title, String text) async {
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       if (data['status'] == 'success') {
-        debugPrint("Video queued successfully!");
+        debugPrint('Video queued successfully!');
         return true;
       }
     }
   } catch (e) {
-    debugPrint("Error queueing video: $e");
+    debugPrint('Error queueing video: $e');
   }
   return false;
 }
@@ -226,8 +226,8 @@ class _PrayerPageState extends State<PrayerPage> {
   }
 
   Future<void> _submit() async {
-    final requestText = _request.text.trim();
-    if (requestText.length < 10) {
+    final text = _request.text.trim();
+    if (text.length < 10) {
       say(context, 'Please share a bit more about your prayer request');
       return;
     }
@@ -235,7 +235,7 @@ class _PrayerPageState extends State<PrayerPage> {
     final ok = await postToScript({
       'type': 'prayer',
       'name': _name.text.trim(),
-      'request': requestText,
+      'request': text,
       'confidential': _confidential.toString(),
     });
     if (!mounted) return;
@@ -258,8 +258,7 @@ class _PrayerPageState extends State<PrayerPage> {
         const SectionCard(
           title: 'Prayer Requests',
           child: Text(
-            'Share your prayer needs with us. Our pastoral and intercessory team prays over every request submitted here.',
-          ),
+              'Share your prayer needs with us. Our pastoral and intercessory team prays over every request submitted here.'),
         ),
         TextField(
           controller: _name,
@@ -662,7 +661,7 @@ class _NeedHelpTabState extends State<NeedHelpTab> {
       _contact.clear();
       _details.clear();
       setState(() {
-            _need = null;
+        _need = null;
         _urgent = false;
       });
       say(context, 'Request received. Our care team will reach out to you.');
@@ -770,108 +769,9 @@ class _NeedHelpTabState extends State<NeedHelpTab> {
   }
 }
 
-class PrayerPage extends StatefulWidget {
-  const PrayerPage({super.key});
-
-  @override
-  State<PrayerPage> createState() => _PrayerPageState();
-}
-
-class _PrayerPageState extends State<PrayerPage> {
-  final _name = TextEditingController();
-  final _request = TextEditingController();
-  bool _confidential = false;
-  bool _sending = false;
-
-  @override
-  void dispose() {
-    _name.dispose();
-    _request.dispose();
-    super.dispose();
-  }
-
-  Future<void> _submit() async {
-    final text = _request.text.trim();
-    if (text.length < 10) {
-      say(context, 'Please share a bit more about your prayer request');
-      return;
-    }
-    setState(() => _sending = true);
-    final ok = await postToScript({
-      'type': 'prayer',
-      'name': _name.text.trim(),
-      'request': text,
-      'confidential': _confidential.toString(),
-    });
-    if (!mounted) return;
-    setState(() => _sending = false);
-    if (ok) {
-      _name.clear();
-      _request.clear();
-      setState(() => _confidential = false);
-      say(context, 'Prayer request sent. Our prayer team is standing with you.');
-    } else {
-      say(context, 'Could not send. Check your internet and try again.');
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        const SectionCard(
-          title: 'Prayer Requests',
-          child: Text(
-              'Share your prayer needs with us. Our prayer team prays over every request submitted here.'),
-        ),
-        TextField(
-          controller: _name,
-          decoration: const InputDecoration(
-            labelText: 'Your name (optional)',
-            filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _request,
-          maxLines: 6,
-          maxLength: 800,
-          decoration: const InputDecoration(
-            labelText: 'How can we pray for you?',
-            alignLabelWithHint: true,
-            filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(),
-          ),
-        ),
-        SwitchListTile(
-          contentPadding: EdgeInsets.zero,
-          value: _confidential,
-          activeThumbColor: kBlue,
-          title: const Text('Pastoral team only (keep confidential)'),
-          onChanged: (v) => setState(() => _confidential = v),
-        ),
-        const SizedBox(height: 8),
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton.icon(
-            style: FilledButton.styleFrom(
-              backgroundColor: kBlue,
-              padding: const EdgeInsets.symmetric(vertical: 14),
-            ),
-            onPressed: _sending ? null : _submit,
-            icon: const Icon(Icons.volunteer_activism_outlined),
-            label: Text(_sending ? 'Sending...' : 'Send prayer request'),
-          ),
-        ),
-        const SizedBox(height: 20),
-      ],
-    );
-  }
-}
+// ============================================================
+//  MAIN APP & SHELL
+// ============================================================
 
 void main() {
   runApp(const GracewayApp());
@@ -950,6 +850,10 @@ class _HomeShellState extends State<HomeShell> {
     );
   }
 }
+
+// ============================================================
+//  DEVOTIONAL PAGE
+// ============================================================
 
 class DevotionalPage extends StatefulWidget {
   const DevotionalPage({super.key});
