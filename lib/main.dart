@@ -669,101 +669,195 @@ class _NeedHelpTabState extends State<NeedHelpTab> {
   }
 }
 void main() {
-    runApp(const class GracewayApp());
-}
-class PrayerPage extends StatefulWidget {
-  const PrayerPage({super.key});
-  @override
-  State<PrayerPage> createState() => _PrayerPageState();
+  runApp(const GracewayApp());
 }
 
-class _PrayerPageState extends State<PrayerPage> {
-  final _name = TextEditingController();
-  final _request = TextEditingController();
-  bool _private = true;
-  bool _sending = false;
+class GracewayApp extends StatelessWidget {
+  const GracewayApp({super.key});
 
   @override
-  void dispose() {
-    _name.dispose();
-    _request.dispose();
-    super.dispose();
+  Widget build(BuildContext context) {
+    return MaterialApp(
+      title: 'Graceway Healing Ministries',
+      debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        useMaterial3: true,
+        colorScheme: ColorScheme.fromSeed(seedColor: kBlue),
+        scaffoldBackgroundColor: kBg,
+      ),
+      home: const HomeShell(),
+    );
+  }
+}
+
+class HomeShell extends StatefulWidget {
+  const HomeShell({super.key});
+  @override
+  State<HomeShell> createState() => _HomeShellState();
+}
+
+class _HomeShellState extends State<HomeShell> {
+  int _index = 0;
+  static const _titles = ['Daily Grace', 'Prayer', 'Community'];
+
+  @override
+  Widget build(BuildContext context) {
+    const pages = <Widget>[
+      DevotionalPage(),
+      PrayerPage(),
+      CommunityPage(),
+    ];
+    return Scaffold(
+      appBar: AppBar(
+        backgroundColor: kBlue,
+        foregroundColor: Colors.white,
+        title: Text(_titles[_index]),
+        actions: [
+          IconButton(
+            tooltip: 'Urgent help',
+            icon: const Icon(Icons.health_and_safety_outlined),
+            onPressed: () => showUrgentHelp(context),
+          ),
+        ],
+      ),
+      body: IndexedStack(index: _index, children: pages),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: _index,
+        onDestinationSelected: (i) => setState(() => _index = i),
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.menu_book_outlined),
+            selectedIcon: Icon(Icons.menu_book),
+            label: 'Daily Grace',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.volunteer_activism_outlined),
+            selectedIcon: Icon(Icons.volunteer_activism),
+            label: 'Prayer',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.groups_outlined),
+            selectedIcon: Icon(Icons.groups),
+            label: 'Community',
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class DevotionalPage extends StatefulWidget {
+  const DevotionalPage({super.key});
+  @override
+  State<DevotionalPage> createState() => _DevotionalPageState();
+}
+
+class _DevotionalPageState extends State<DevotionalPage> {
+  Map<String, dynamic>? data;
+  bool loading = true;
+  bool failed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
   }
 
-  Future<void> _submit() async {
-    if (_request.text.trim().isEmpty) {
-      say(context, 'Please write your prayer request');
-      return;
+  Future<void> _load() async {
+    bool bad = false;
+    Map<String, dynamic>? next;
+    try {
+      final uri = Uri.parse(kScriptUrl)
+          .replace(queryParameters: {'action': 'get_devotional'});
+      final res = await http.get(uri).timeout(const Duration(seconds: 20));
+      if (res.statusCode == 200) {
+        final decoded = jsonDecode(res.body);
+        if (decoded is Map<String, dynamic> && decoded['status'] != 'error') {
+          next = decoded;
+        } else {
+          bad = true;
+        }
+      } else {
+        bad = true;
+      }
+    } catch (_) {
+      bad = true;
     }
-    setState(() => _sending = true);
-    final ok = await postToScript({
-      'type': 'prayer',
-      'name': _name.text.trim(),
-      'request': _request.text.trim(),
-      'private': _private.toString(),
-    });
     if (!mounted) return;
-    setState(() => _sending = false);
-    if (ok) {
-      _name.clear();
-      _request.clear();
-      say(context, 'Thank you. We are praying with you.');
-    } else {
-      say(context, 'Could not send. Check your internet and try again.');
-    }
+    setState(() {
+      if (!bad) data = next;
+      failed = bad;
+      loading = false;
+    });
+  }
+
+  String _s(String key) => (data?[key] ?? '').toString();
+
+  void _share() {
+    final msg = '${_s('title')}\n\n${_s('verse')}\n\n${_s('message')}\n\n'
+        'Prayer: ${_s('prayer')}\n\n- Graceway Healing Ministries';
+    openUri(Uri.parse('https://wa.me/?text=${Uri.encodeComponent(msg)}'));
   }
 
   @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        const SectionCard(
-          title: 'Share your prayer request',
-          child: Text('Your request is handled with care and confidentiality.'),
-        ),
-        TextField(
-          controller: _name,
-          decoration: const InputDecoration(
-            labelText: 'Your name (optional)',
-            filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(),
-          ),
-        ),
-        const SizedBox(height: 12),
-        TextField(
-          controller: _request,
-          maxLines: 6,
-          decoration: const InputDecoration(
-            labelText: 'Prayer request',
-            alignLabelWithHint: true,
-            filled: true,
-            fillColor: Colors.white,
-            border: OutlineInputBorder(),
-          ),
-        ),
-        SwitchListTile(
-          contentPadding: EdgeInsets.zero,
-          value: _private,
-          activeThumbColor: kBlue,
-          title: const Text('Keep this request private'),
-          onChanged: (v) => setState(() => _private = v),
-        ),
-        const SizedBox(height: 6),
-        SizedBox(
-          width: double.infinity,
-          child: FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: kBlue,
-              padding: const EdgeInsets.symmetric(vertical: 14),
+    final hasData = data != null && _s('verse').isNotEmpty;
+    return RefreshIndicator(
+      color: kBlue,
+      onRefresh: _load,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        children: [
+          if (loading && data == null)
+            const Center(
+              child: Padding(
+                padding: EdgeInsets.all(24),
+                child: CircularProgressIndicator(),
+              ),
             ),
-            onPressed: _sending ? null : _submit,
-            child: Text(_sending ? 'Sending...' : 'Send request'),
-          ),
-        ),
-        const SizedBox(height: 20),
-      ],
+          if (failed && data == null)
+            const SectionCard(
+              title: 'Could not load',
+              child: Text('Check your internet and pull down to try again.'),
+            ),
+          if (!loading && !failed && !hasData)
+            const SectionCard(
+              title: 'Daily Grace',
+              child: Text('Today\'s devotional is on its way. Check back soon.'),
+            ),
+          if (hasData) ...[
+            SectionCard(
+              title: _s('title'),
+              child: Text(
+                _s('verse'),
+                style: const TextStyle(
+                    fontSize: 16, height: 1.5, fontStyle: FontStyle.italic),
+              ),
+            ),
+            SectionCard(
+              title: 'Today\'s word',
+              child: Text(_s('message'),
+                  style: const TextStyle(fontSize: 15, height: 1.5)),
+            ),
+            SectionCard(
+              title: 'Prayer',
+              child: Text(_s('prayer'),
+                  style: const TextStyle(fontSize: 15, height: 1.5)),
+            ),
+            FilledButton.icon(
+              style: FilledButton.styleFrom(
+                backgroundColor: kBlue,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+              ),
+              onPressed: _share,
+              icon: const Icon(Icons.share),
+              label: const Text('Share on WhatsApp'),
+            ),
+          ],
+          const SizedBox(height: 20),
+        ],
+      ),
     );
   }
 }
