@@ -385,8 +385,8 @@ class _PrayerPageState extends State<PrayerPage> {
           ),
           onPressed: _submit,
           child: const Text('Send request'),
-        )      
-      ]
+        ),
+      ],
     );
   }
 }
