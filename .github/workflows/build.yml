@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:
+  workflow_dispatch: # Allows you to manually trigger the build from the Actions tab
 
 permissions:
   contents: read
@@ -36,20 +36,31 @@ jobs:
       - name: Check Flutter installation
         run: flutter doctor -v
 
-      # ✅ NEW STEP: Generate the missing android folder
-      # It must be placed AFTER Flutter is installed
+      # 1. Generate the Android folder since it's not in the repo
       - name: Generate missing platform folders
         run: flutter create . --platforms=android
+
+      # 2. Inject INTERNET permission so the Community tab can fetch data
+      - name: Add Internet Permission to Android Manifest
+        run: |
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.INTERNET" />' android/app/src/main/AndroidManifest.xml
 
       - name: Get dependencies
         run: flutter pub get
 
+      # 3. Generate your custom app logo
+      - name: Generate App Icons
+        run: dart run flutter_launcher_icons
+
+      # 4. Analyze code (no-fatal ensures warnings don't break the build)
       - name: Analyze Flutter code
         run: flutter analyze --no-fatal-infos --no-fatal-warnings
 
+      # 5. Build the actual APK
       - name: Build release APK
         run: flutter build apk --release
 
+      # 6. Upload the APK so you can download it
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
