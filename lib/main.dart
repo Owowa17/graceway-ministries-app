@@ -668,7 +668,7 @@ class _NeedHelpTabState extends State<NeedHelpTab> {
   }
 }
 void main() {
-  runApp(const GracewayApp());
+  runApp(const gracewayapp());
 }
 class PrayerPage extends StatefulWidget {
   const PrayerPage({super.key});
