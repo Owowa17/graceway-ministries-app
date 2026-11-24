@@ -3,9 +3,10 @@ name: Build APK
 on:
   push:
     branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -15,6 +16,19 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Clean hidden characters
+        run: |
+          find lib -name "*.dart" -print0 | xargs -0 perl -CSD -pi -e 's/[\x{00A0}\x{202F}\x{2007}\x{3000}]/ /g; s/[\x{200B}\x{200C}\x{200D}\x{2060}\x{FEFF}]//g'
+          echo "Cleaned."
+
+      - name: Save cleaned code back to the repo
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add lib
+          git diff --cached --quiet || git commit -m "Auto-clean hidden characters"
+          git push || true
 
       - name: Set up Java
         uses: actions/setup-java@v4
@@ -51,16 +65,10 @@ jobs:
 
       - name: Build APK
         run: flutter build apk --release
-        continue-on-error: true
-
-      - name: Find APK files
-        run: find . -name "*.apk" -not -path "./.git/*"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: graceway-app-compact
-          path: |
-            build/app/outputs/flutter-apk/*.apk
-            android/app/build/outputs/**/*.apk
+          path: build/app/outputs/flutter-apk/*.apk
           if-no-files-found: error
