@@ -183,8 +183,9 @@ class SectionCard extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 14),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: kGold.withValues(alpha: 0.4)
+                side: BorderSide(color: kGold.withValues(alpha: 0.4)),
       ),
+      
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(
@@ -307,7 +308,7 @@ class _GraceWallTabState extends State<GraceWallTab> {
       margin: const EdgeInsets.only(bottom: 12),
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: kGold.withValues(alpha: 0.4),
+                side: BorderSide(color: kGold.withValues(alpha: 0.4)),
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -668,7 +669,7 @@ class _NeedHelpTabState extends State<NeedHelpTab> {
   }
 }
 void main() {
-    runApp(const GracewayApp());
+    runApp(const class GracewayApp());
 }
 class PrayerPage extends StatefulWidget {
   const PrayerPage({super.key});
@@ -745,7 +746,7 @@ class _PrayerPageState extends State<PrayerPage> {
         SwitchListTile(
           contentPadding: EdgeInsets.zero,
           value: _private,
-          activeColor: kBlue,
+          activeThumbColor: kBlue,
           title: const Text('Keep this request private'),
           onChanged: (v) => setState(() => _private = v),
         ),
