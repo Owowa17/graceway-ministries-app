@@ -1,7 +1,9 @@
+import 'dart:convert'; // ✅ Added for JSON decoding
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http; // ✅ Added for fetching devotional
 import 'helpers.dart';
-import 'community.dart'; // <-- Ensures your new Community page is linked
+import 'community.dart';
 
 void main() => runApp(const GracewayApp());
 
@@ -32,15 +34,16 @@ class GracewayApp extends StatelessWidget {
   }
 }
 
+// ✅ FIXED: Path changed to 'assets/' and default file to 'icon.png'
 class LogoImage extends StatelessWidget {
   final double height;
   final String file;
-  const LogoImage({super.key, this.height = 120, this.file = 'logo.png'});
+  const LogoImage({super.key, this.height = 120, this.file = 'icon.png'});
 
   @override
   Widget build(BuildContext context) {
     return Image.asset(
-      'assets/images/$file',
+      'assets/$file',
       height: height,
       errorBuilder: (_, __, ___) =>
           Icon(Icons.church, size: height * 0.6, color: kGold),
@@ -84,14 +87,13 @@ class HomeShell extends StatefulWidget {
 class _HomeShellState extends State<HomeShell> {
   int _index = 0;
 
-  // Added 'Community' to the titles and pages
   static const _titles = ['Home', 'Sermons', 'Events', 'Give', 'Community'];
   final _pages = const [
     HomePage(),
     SermonsPage(),
     EventsPage(),
     GivePage(),
-    CommunityPage(), // <-- Your new page from community.dart
+    CommunityPage(),
   ];
 
   @override
@@ -101,7 +103,7 @@ class _HomeShellState extends State<HomeShell> {
       body: _pages[_index],
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
-        indicatorColor: kGold.withOpacity(0.35),
+        indicatorColor: kGold.withValues(alpha: 0.35), // Fixed deprecation
         onDestinationSelected: (i) => setState(() => _index = i),
         destinations: const [
           NavigationDestination(icon: Icon(Icons.home_outlined), label: 'Home'),
@@ -115,36 +117,124 @@ class _HomeShellState extends State<HomeShell> {
   }
 }
 
-class HomePage extends StatelessWidget {
+// ✅ FIXED: Turned into StatefulWidget to fetch from Google Script + Added Pastor Image
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  String _title = 'Daily Grace';
+  String _verse = '';
+  String _message = 'Loading today\'s devotional...';
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchDevotional();
+  }
+
+  Future<void> _fetchDevotional() async {
+    setState(() => _loading = true);
+    try {
+      final res = await http.get(Uri.parse('$kScriptUrl?action=get_devotional'))
+          .timeout(const Duration(seconds: 15));
+      
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body);
+        if (data['status'] == 'success') {
+          setState(() {
+            _title = data['title'] ?? 'Daily Grace';
+            _verse = data['verse'] ?? '';
+            _message = data['message'] ?? 'No message today.';
+          });
+        }
+      }
+    } catch (e) {
+      setState(() => _message = 'Could not load devotional. Check your internet.');
+    } finally {
+      if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        const Center(child: LogoImage(height: 150)),
-        const SizedBox(height: 8),
-        const Center(
-          child: Text(
-            'Healing for the broken. Grace for the journey.',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-                color: kBlue, fontStyle: FontStyle.italic, fontSize: 15),
+    return RefreshIndicator(
+      onRefresh: _fetchDevotional,
+      color: kBlue,
+      child: ListView(
+        physics: const AlwaysScrollableScrollPhysics(),
+        padding: const EdgeInsets.all(16),
+        children: [
+          // Logo
+          const Center(child: LogoImage(height: 100)), 
+          const SizedBox(height: 16),
+          
+          // Pastor Image & Welcome
+          Center(
+            child: CircleAvatar(
+              radius: 50,
+              backgroundColor: kGold.withValues(alpha: 0.2),
+              backgroundImage: const AssetImage('assets/pastor.png'), // ✅ Fixed path
+            ),
           ),
-        ),
-        const SizedBox(height: 20),
-        const SectionCard(
-          title: 'Daily Devotional',
-          child: Text(
-            'Come to me, all you who are weary and burdened, and I will give you rest. (Matthew 11:28)\n\nEdit this text each day, or connect it to a server later.',
+          const SizedBox(height: 12),
+          const Center(
+            child: Text(
+              'Pst. Michael Owowa',
+              style: TextStyle(color: kBlue, fontSize: 18, fontWeight: FontWeight.bold),
+            ),
           ),
-        ),
-        const SectionCard(
-          title: 'Announcements',
-          child: Text('Sunday Service: 9:00 AM\nMidweek Prayer: Wednesday, 6:00 PM'),
-        ),
-      ],
+          const Center(
+            child: Text(
+              'Healing for the broken. Grace for the journey.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.black54, fontStyle: FontStyle.italic, fontSize: 14),
+            ),
+          ),
+          const SizedBox(height: 24),
+
+          // Dynamic Daily Devotional
+          SectionCard(
+            title: _title,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (_verse.isNotEmpty) ...[
+                  Text(
+                    _verse,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: kGold,
+                      fontSize: 15,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                ],
+                if (_loading)
+                  const Center(child: Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: CircularProgressIndicator(color: kGold),
+                  ))
+                else
+                  Text(
+                    _message,
+                    style: const TextStyle(fontSize: 15, height: 1.5),
+                  ),
+              ],
+            ),
+          ),
+
+          // Announcements
+          const SectionCard(
+            title: 'Announcements',
+            child: Text('Sunday Service: 9:00 AM\nMidweek Prayer: Wednesday, 6:00 PM'),
+          ),
+        ],
+      ),
     );
   }
 }
