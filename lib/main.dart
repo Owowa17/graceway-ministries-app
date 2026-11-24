@@ -439,6 +439,135 @@ class _GraceWallTabState extends State<GraceWallTab> {
       ),
     );
   }
+class GraceWallTab extends StatefulWidget {
+  const GraceWallTab({super.key});
+  @override
+  State<GraceWallTab> createState() => _GraceWallTabState();
+}
+
+class _GraceWallTabState extends State<GraceWallTab> {
+  List> items = [];
+  bool loading = true;
+  bool failed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    bool bad = false;
+    List> next = [];
+    try {
+      final uri = Uri.parse(kScriptUrl)
+          .replace(queryParameters: {'action': 'testimonies'});
+      final res = await http.get(uri).timeout(const Duration(seconds: 20));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body) as Map<String, dynamic>;
+        final list = (data['items'] as List?) ?? [];
+        next = list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      } else {
+        bad = true;
+      }
+    } catch (_) {
+      bad = true;
+    }
+    if (!mounted) return;
+    setState(() {
+      if (!bad) items = next;
+      failed = bad;
+class GraceWallTab extends StatefulWidget {
+  const GraceWallTab({super.key});
+  @override
+  State<GraceWallTab> createState() => _GraceWallTabState();
+}
+
+class _GraceWallTabState extends State<GraceWallTab> {
+  List> items = [];
+  bool loading = true;
+  bool failed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    bool bad = false;
+    List> next = [];
+    try {
+      final uri = Uri.parse(kScriptUrl)
+          .replace(queryParameters: {'action': 'testimonies'});
+      final res = await http.get(uri).timeout(const Duration(seconds: 20));
+      if (res.statusCode == 200) {
+        final data = jsonDecode(res.body) as Map<String, dynamic>;
+        final list = (data['items'] as List?) ?? [];
+        next = list.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      } else {
+        bad = true;
+      }
+    } catch (_) {
+      bad = true;
+    }
+    if (!mounted) return;
+    setState(() {
+      if (!bad) items = next;
+      failed = bad;
+      loading = false;
+    });
+  }
+
+  void _share() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      builder: (_) => const TestimonyForm(),
+    );
+  }
+
+  Widget _card(Map<String, dynamic> t) {
+    final name = (t['name'] ?? 'Anonymous').toString();
+    final text = (t['text'] ?? '').toString();
+    final date = (t['date'] ?? '').toString();
+    return Card(
+      color: Colors.white,
+      elevation: 0,
+      margin: const EdgeInsets.only(bottom: 12),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(color: kGold.withValues(alpha: 0.4)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(text, style: const TextStyle(fontSize: 15, height: 1.5)),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                const Icon(Icons.favorite, size: 14, color: kGold),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    date.isEmpty ? name : '$name  -  $date',
+                    style: const TextStyle(
+                      color: kBlue,
+                      fontWeight: FontWeight.w600,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
