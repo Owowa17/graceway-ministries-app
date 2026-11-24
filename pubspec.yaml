@@ -1,4 +1,4 @@
-name: Graceway_App
+name: graceway_app
 description: "Graceway & Healing Ministries App"
 publish_to: 'none'
 
@@ -28,7 +28,6 @@ flutter_launcher_icons:
 
 flutter:
   uses-material-design: true
-  
+
   assets:
-    - assets/images/pastor.png
-    - assets/icon.png # Optional, but good to include if you ever want to show the logo inside the app
+    - assets/icon.png
