@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'helpers.dart';
 import 'community.dart';
+import 'health_tips.dart'; // ✅ Imported Health Tips
 
 void main() => runApp(const GracewayApp());
 
@@ -37,13 +38,12 @@ class GracewayApp extends StatelessWidget {
 class LogoImage extends StatelessWidget {
   final double height;
   final String file;
-  // ✅ Changed default to icon.png to match your repo
   const LogoImage({super.key, this.height = 120, this.file = 'icon.png'});
 
   @override
   Widget build(BuildContext context) {
     return Image.asset(
-      'assets/$file', // ✅ Points directly to assets folder
+      'assets/$file',
       height: height,
       errorBuilder: (_, __, ___) =>
           Icon(Icons.church, size: height * 0.6, color: kGold),
@@ -103,7 +103,8 @@ class _HomeShellState extends State<HomeShell> {
       body: _pages[_index],
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
-        indicatorColor: kGold.withValues(alpha: 0.35), // ✅ Fixed deprecation
+        // ✅ Fixed deprecation warning
+        indicatorColor: kGold.withValues(alpha: 0.35), 
         onDestinationSelected: (i) => setState(() => _index = i),
         destinations: const [
           NavigationDestination(icon: Icon(Icons.home_outlined), label: 'Home'),
@@ -177,17 +178,20 @@ class _HomePageState extends State<HomePage> {
       ).timeout(const Duration(seconds: 20));
 
       if (res.statusCode == 200) {
+        // ✅ We changed this to print the EXACT server response to the debug console
+        print("SERVER RESPONSE: ${res.body}"); 
+        
         final data = jsonDecode(res.body);
         if (data['status'] == 'success') {
           say(context, '✅ Video queued! It will be ready in a few minutes.');
         } else {
-          say(context, '❌ Failed to queue video.');
+          say(context, '❌ Server error: ${data['message']}');
         }
       } else {
-        say(context, '❌ Server error. Try again.');
+        say(context, '❌ HTTP Error: ${res.statusCode}');
       }
     } catch (e) {
-      say(context, '❌ Network error. Check your internet.');
+      say(context, '❌ Network error: $e');
     } finally {
       if (mounted) setState(() => _generatingVideo = false);
     }
@@ -195,120 +199,126 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return RefreshIndicator(
-      onRefresh: _fetchDevotional,
-      color: kBlue,
-      child: ListView(
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.all(16),
-        children: [
-          // Logo
-          const Center(child: LogoImage(height: 100)), 
-          const SizedBox(height: 16),
-          
-          // Pastor Image & Welcome
-          Center(
-            child: CircleAvatar(
-              radius: 50,
-              backgroundColor: kGold.withValues(alpha: 0.2),
-              backgroundImage: const AssetImage('assets/pastor.png'), // ✅ Fixed path
+    // ✅ SafeArea prevents the top logo from being cut off by the phone's status bar
+    return SafeArea(
+      child: RefreshIndicator(
+        onRefresh: _fetchDevotional,
+        color: kBlue,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          padding: const EdgeInsets.all(16),
+          children: [
+            // Logo
+            const Center(child: LogoImage(height: 100)), 
+            const SizedBox(height: 16),
+            
+            // Pastor Image & Welcome
+            Center(
+              child: CircleAvatar(
+                radius: 50,
+                backgroundColor: kGold.withValues(alpha: 0.2),
+                backgroundImage: const AssetImage('assets/pastor.png'),
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
-          const Center(
-            child: Text(
-              'Michael Owowa',
-              style: TextStyle(color: kBlue, fontSize: 18, fontWeight: FontWeight.bold),
+            const SizedBox(height: 12),
+            const Center(
+              child: Text(
+                'Michael Owowa',
+                style: TextStyle(color: kBlue, fontSize: 18, fontWeight: FontWeight.bold),
+              ),
             ),
-          ),
-          const Center(
-            child: Text(
-              'Healing for the broken. Grace for the journey.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.black54, fontStyle: FontStyle.italic, fontSize: 14),
+            const Center(
+              child: Text(
+                'Healing for the broken. Grace for the journey.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: Colors.black54, fontStyle: FontStyle.italic, fontSize: 14),
+              ),
             ),
-          ),
-          const SizedBox(height: 24),
+            const SizedBox(height: 24),
 
-          // Dynamic Daily Devotional
-          SectionCard(
-            title: _title,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (_verse.isNotEmpty) ...[
-                  Text(
-                    _verse,
-                    style: const TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: kGold,
-                      fontSize: 15,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                ],
-                if (_loading)
-                  const Center(child: Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: CircularProgressIndicator(color: kGold),
-                  ))
-                else ...[
-                  Text(
-                    _message,
-                    style: const TextStyle(fontSize: 15, height: 1.5),
-                  ),
-                  
-                  // Prayer section
-                  if (_prayer.isNotEmpty) ...[
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Prayer',
-                      style: TextStyle(fontWeight: FontWeight.bold, color: kBlue, fontSize: 15),
-                    ),
-                    const SizedBox(height: 4),
+            // Dynamic Daily Devotional
+            SectionCard(
+              title: _title,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (_verse.isNotEmpty) ...[
                     Text(
-                      _prayer,
-                      style: const TextStyle(fontSize: 15, height: 1.5, fontStyle: FontStyle.italic),
-                    ),
-                  ],
-
-                  const Divider(height: 32),
-
-                  // Video Generation & Share Buttons
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      TextButton.icon(
-                        onPressed: _generatingVideo ? null : _generateShort,
-                        icon: _generatingVideo 
-                            ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: kBlue))
-                            : const Icon(Icons.videocam_outlined, color: kBlue),
-                        label: Text(
-                          _generatingVideo ? 'Queueing...' : 'Create Short',
-                          style: const TextStyle(color: kBlue, fontWeight: FontWeight.bold),
-                        ),
+                      _verse,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: kGold,
+                        fontSize: 15,
                       ),
-                      TextButton.icon(
-                        onPressed: () {
-                          final textToShare = '$_title\n\n$_verse\n\n$_message\n\nPrayer: $_prayer';
-                          Clipboard.setData(ClipboardData(text: textToShare));
-                          say(context, 'Devotional text copied to clipboard!');
-                        },
-                        icon: const Icon(Icons.share_outlined, color: kBlue),
-                        label: const Text(
-                          'Share Text',
-                          style: TextStyle(color: kBlue, fontWeight: FontWeight.bold),
-                        ),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  if (_loading)
+                    const Center(child: Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: CircularProgressIndicator(color: kGold),
+                    ))
+                  else ...[
+                    Text(
+                      _message,
+                      style: const TextStyle(fontSize: 15, height: 1.5),
+                    ),
+                    
+                    if (_prayer.isNotEmpty) ...[
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Prayer',
+                        style: TextStyle(fontWeight: FontWeight.bold, color: kBlue, fontSize: 15),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _prayer,
+                        style: const TextStyle(fontSize: 15, height: 1.5, fontStyle: FontStyle.italic),
                       ),
                     ],
-                  ),
+
+                    const Divider(height: 32),
+
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        TextButton.icon(
+                          onPressed: _generatingVideo ? null : _generateShort,
+                          icon: _generatingVideo 
+                              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: kBlue))
+                              : const Icon(Icons.videocam_outlined, color: kBlue),
+                          label: Text(
+                            _generatingVideo ? 'Queueing...' : 'Create Short',
+                            style: const TextStyle(color: kBlue, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        TextButton.icon(
+                          onPressed: () {
+                            final textToShare = '$_title\n\n$_verse\n\n$_message\n\nPrayer: $_prayer';
+                            Clipboard.setData(ClipboardData(text: textToShare));
+                            say(context, 'Devotional text copied to clipboard!');
+                          },
+                          icon: const Icon(Icons.share_outlined, color: kBlue),
+                          label: const Text(
+                            'Share Text',
+                            style: TextStyle(color: kBlue, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
-              ],
+              ),
             ),
-          ),
-          
-          // ✅ Announcements section removed as requested
-        ],
+
+            const SizedBox(height: 8), // Small spacing before the Health Tip
+
+            // ✅ HEALTH TIPS UI
+            const HealthTipCard(),
+            
+            const SizedBox(height: 24), // Bottom padding
+          ],
+        ),
       ),
     );
   }
