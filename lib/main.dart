@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'helpers.dart';
 import 'community.dart';
-import 'health_tips.dart'; // ✅ Imported Health Tips
+import 'health_tips.dart';
 
 void main() => runApp(const GracewayApp());
 
@@ -103,7 +103,6 @@ class _HomeShellState extends State<HomeShell> {
       body: _pages[_index],
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
-        // ✅ Fixed deprecation warning
         indicatorColor: kGold.withValues(alpha: 0.35), 
         onDestinationSelected: (i) => setState(() => _index = i),
         destinations: const [
@@ -163,45 +162,47 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
+  // ✅ FIXED: This method is now correctly inside the class with proper syntax
   Future<void> _generateShort() async {
-  setState(() => _generatingVideo = true);
-  final videoText = '$_verse\n\n$_message\n\nPrayer: $_prayer';
-  
-  try {
-    final client = http.Client();
-    final request = http.Request('POST', Uri.parse(kScriptUrl));
+    setState(() => _generatingVideo = true);
+    final videoText = '$_verse\n\n$_message\n\nPrayer: $_prayer';
     
-    // ✅ Tell Google to skip the redirect to the login page
-    request.headers['X-Requested-With'] = 'XMLHttpRequest'; 
-    
-    request.bodyFields = {
-      'type': 'generate_video',
-      'title': _title,
-      'text': videoText,
-    };
+    try {
+      final client = http.Client();
+      final request = http.Request('POST', Uri.parse(kScriptUrl));
+      
+      // ✅ Tell Google to skip the redirect to the login page
+      request.headers['X-Requested-With'] = 'XMLHttpRequest'; 
+      
+      request.bodyFields = {
+        'type': 'generate_video',
+        'title': _title,
+        'text': videoText,
+      };
 
-    final streamedResponse = await client.send(request).timeout(const Duration(seconds: 20));
-    final response = await http.Response.fromStream(streamedResponse);
+      final streamedResponse = await client.send(request).timeout(const Duration(seconds: 20));
+      final response = await http.Response.fromStream(streamedResponse);
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
-      if (data['status'] == 'success') {
-        say(context, '✅ Video queued! It will be ready in a few minutes.');
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['status'] == 'success') {
+          say(context, '✅ Video queued! It will be ready in a few minutes.');
+        } else {
+          say(context, '❌ Server error: ${data['message']}');
+        }
       } else {
-        say(context, '❌ Server error: ${data['message']}');
+        say(context, '❌ HTTP Error: ${response.statusCode}');
       }
-    } else {
-      say(context, '❌ HTTP Error: ${response.statusCode}');
+    } catch (e) {
+      say(context, '❌ Network error: $e');
+    } finally {
+      if (mounted) setState(() => _generatingVideo = false);
     }
-  } catch (e) {
-    say(context, '❌ Network error: $e');
-  } finally {
-    if (mounted) setState(() => _generatingVideo = false);
   }
-}
+
+  // ✅ FIXED: Restored the proper @override keyword
   @override
   Widget build(BuildContext context) {
-    // ✅ SafeArea prevents the top logo from being cut off by the phone's status bar
     return SafeArea(
       child: RefreshIndicator(
         onRefresh: _fetchDevotional,
@@ -313,12 +314,12 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
 
-            const SizedBox(height: 8), // Small spacing before the Health Tip
+            const SizedBox(height: 8), 
 
             // ✅ HEALTH TIPS UI
             const HealthTipCard(),
             
-            const SizedBox(height: 24), // Bottom padding
+            const SizedBox(height: 24), 
           ],
         ),
       ),
