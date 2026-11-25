@@ -164,39 +164,41 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _generateShort() async {
-    setState(() => _generatingVideo = true);
-    final videoText = '$_verse\n\n$_message\n\nPrayer: $_prayer';
+  setState(() => _generatingVideo = true);
+  final videoText = '$_verse\n\n$_message\n\nPrayer: $_prayer';
+  
+  try {
+    final client = http.Client();
+    final request = http.Request('POST', Uri.parse(kScriptUrl));
     
-    try {
-      final res = await http.post(
-        Uri.parse(kScriptUrl),
-        body: {
-          'type': 'generate_video',
-          'title': _title,
-          'text': videoText,
-        },
-      ).timeout(const Duration(seconds: 20));
+    // ✅ Tell Google to skip the redirect to the login page
+    request.headers['X-Requested-With'] = 'XMLHttpRequest'; 
+    
+    request.bodyFields = {
+      'type': 'generate_video',
+      'title': _title,
+      'text': videoText,
+    };
 
-      if (res.statusCode == 200) {
-        // ✅ We changed this to print the EXACT server response to the debug console
-        print("SERVER RESPONSE: ${res.body}"); 
-        
-        final data = jsonDecode(res.body);
-        if (data['status'] == 'success') {
-          say(context, '✅ Video queued! It will be ready in a few minutes.');
-        } else {
-          say(context, '❌ Server error: ${data['message']}');
-        }
+    final streamedResponse = await client.send(request).timeout(const Duration(seconds: 20));
+    final response = await http.Response.fromStream(streamedResponse);
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      if (data['status'] == 'success') {
+        say(context, '✅ Video queued! It will be ready in a few minutes.');
       } else {
-        say(context, '❌ HTTP Error: ${res.statusCode}');
+        say(context, '❌ Server error: ${data['message']}');
       }
-    } catch (e) {
-      say(context, '❌ Network error: $e');
-    } finally {
-      if (mounted) setState(() => _generatingVideo = false);
+    } else {
+      say(context, '❌ HTTP Error: ${response.statusCode}');
     }
+  } catch (e) {
+    say(context, '❌ Network error: $e');
+  } finally {
+    if (mounted) setState(() => _generatingVideo = false);
   }
-
+}
   @override
   Widget build(BuildContext context) {
     // ✅ SafeArea prevents the top logo from being cut off by the phone's status bar
