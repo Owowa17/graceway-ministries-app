@@ -103,14 +103,18 @@ class _HomeShellState extends State<HomeShell> {
       body: _pages[_index],
       bottomNavigationBar: NavigationBar(
         selectedIndex: _index,
-        indicatorColor: kGold.withValues(alpha: 0.35), 
+        indicatorColor: kGold.withValues(alpha: 0.35),
         onDestinationSelected: (i) => setState(() => _index = i),
         destinations: const [
           NavigationDestination(icon: Icon(Icons.home_outlined), label: 'Home'),
-          NavigationDestination(icon: Icon(Icons.play_circle_outline), label: 'Sermons'),
-          NavigationDestination(icon: Icon(Icons.event_outlined), label: 'Events'),
-          NavigationDestination(icon: Icon(Icons.volunteer_activism_outlined), label: 'Give'),
-          NavigationDestination(icon: Icon(Icons.people_outline), label: 'Community'),
+          NavigationDestination(
+              icon: Icon(Icons.play_circle_outline), label: 'Sermons'),
+          NavigationDestination(
+              icon: Icon(Icons.event_outlined), label: 'Events'),
+          NavigationDestination(
+              icon: Icon(Icons.volunteer_activism_outlined), label: 'Give'),
+          NavigationDestination(
+              icon: Icon(Icons.people_outline), label: 'Community'),
         ],
       ),
     );
@@ -141,9 +145,10 @@ class _HomePageState extends State<HomePage> {
   Future<void> _fetchDevotional() async {
     setState(() => _loading = true);
     try {
-      final res = await http.get(Uri.parse('$kScriptUrl?action=get_devotional'))
+      final res = await http
+          .get(Uri.parse('$kScriptUrl?action=get_devotional'))
           .timeout(const Duration(seconds: 15));
-      
+
       if (res.statusCode == 200) {
         final data = jsonDecode(res.body);
         if (data['status'] == 'success') {
@@ -162,67 +167,69 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  // ✅ FIXED: This method is now correctly inside the class with proper syntax
   Future<void> _generateShort() async {
-  setState(() => _generatingVideo = true);
-  final videoText = '$_verse\n\n$_message\n\nPrayer: $_prayer';
-  
-  try {
+    setState(() => _generatingVideo = true);
+    final videoText = '$_verse\n\n$_message\n\nPrayer: $_prayer';
     final client = http.Client();
-    final request = http.Request('POST', Uri.parse(kScriptUrl));
-    
-    // 1. Stop the client from automatically following redirects
-    request.followRedirects = false; 
-    
-    request.bodyFields = {
-      'type': 'generate_video',
-      'title': _title,
-      'text': videoText,
-    };
 
-    final streamedResponse = await client.send(request).timeout(const Duration(seconds: 20));
-    
-    // 2. Check if Google sent a 302 Redirect
-    if (streamedResponse.statusCode == 302) {
-      final redirectUrl = streamedResponse.headers['location'];
-      
-      if (redirectUrl != null) {
-        // 3. Manually follow the redirect with a GET request to get the result
-        final finalResponse = await http.get(Uri.parse(redirectUrl));
-        
-        if (finalResponse.statusCode == 200) {
-          final data = jsonDecode(finalResponse.body);
-          if (data['status'] == 'success') {
-            say(context, '✅ Video queued! It will be ready in a few minutes.');
+    try {
+      final request = http.Request('POST', Uri.parse(kScriptUrl));
+
+      // 1. Stop the client from automatically following redirects
+      request.followRedirects = false;
+
+      request.bodyFields = {
+        'type': 'generate_video',
+        'title': _title,
+        'text': videoText,
+      };
+
+      final streamedResponse = await client
+          .send(request)
+          .timeout(const Duration(seconds: 20));
+
+      // 2. Check if Google sent a 302 Redirect
+      if (streamedResponse.statusCode == 302) {
+        final redirectUrl = streamedResponse.headers['location'];
+
+        if (redirectUrl != null) {
+          // 3. Manually follow the redirect with a GET request to get the result
+          final finalResponse = await http.get(Uri.parse(redirectUrl));
+
+          if (finalResponse.statusCode == 200) {
+            final data = jsonDecode(finalResponse.body);
+            if (data['status'] == 'success') {
+              say(context, '✅ Video queued! It will be ready in a few minutes.');
+            } else {
+              say(context, '❌ Server error: ${data['message']}');
+            }
           } else {
-            say(context, '❌ Server error: ${data['message']}');
+            say(context, '❌ Error fetching result: ${finalResponse.statusCode}');
           }
         } else {
-          say(context, '❌ Error fetching final result: ${finalResponse.statusCode}');
+          say(context, '❌ Redirect URL missing.');
+        }
+      }
+      // 4. Handle direct success (if a redirect was skipped)
+      else if (streamedResponse.statusCode == 200) {
+        final response = await http.Response.fromStream(streamedResponse);
+        final data = jsonDecode(response.body);
+        if (data['status'] == 'success') {
+          say(context, '✅ Video queued! It will be ready in a few minutes.');
+        } else {
+          say(context, '❌ Server error: ${data['message']}');
         }
       } else {
-        say(context, '❌ Redirect URL missing.');
+        say(context, '❌ HTTP Error: ${streamedResponse.statusCode}');
       }
-    } 
-    // 4. Handle direct success (if a redirect was skipped)
-    else if (streamedResponse.statusCode == 200) {
-      final response = await http.Response.fromStream(streamedResponse);
-      final data = jsonDecode(response.body);
-      if (data['status'] == 'success') {
-        say(context, '✅ Video queued! It will be ready in a few minutes.');
-      } else {
-        say(context, '❌ Server error: ${data['message']}');
-      }
-    } else {
-      say(context, '❌ HTTP Error: ${streamedResponse.statusCode}');
+    } catch (e) {
+      say(context, '❌ Network error: $e');
+    } finally {
+      client.close(); // Clean up the client
+      if (mounted) setState(() => _generatingVideo = false);
     }
-  } catch (e) {
-    say(context, '❌ Network error: $e');
-  } finally {
-    if (mounted) setState(() => _generatingVideo = false);
   }
-}
-  // ✅ FIXED: Restored the proper @override keyword
+
   @override
   Widget build(BuildContext context) {
     return SafeArea(
@@ -234,9 +241,9 @@ class _HomePageState extends State<HomePage> {
           padding: const EdgeInsets.all(16),
           children: [
             // Logo
-            const Center(child: LogoImage(height: 100)), 
+            const Center(child: LogoImage(height: 100)),
             const SizedBox(height: 16),
-            
+
             // Pastor Image & Welcome
             Center(
               child: CircleAvatar(
@@ -249,14 +256,18 @@ class _HomePageState extends State<HomePage> {
             const Center(
               child: Text(
                 'Michael Owowa',
-                style: TextStyle(color: kBlue, fontSize: 18, fontWeight: FontWeight.bold),
+                style: TextStyle(
+                    color: kBlue, fontSize: 18, fontWeight: FontWeight.bold),
               ),
             ),
             const Center(
               child: Text(
                 'Healing for the broken. Grace for the journey.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: Colors.black54, fontStyle: FontStyle.italic, fontSize: 14),
+                style: TextStyle(
+                    color: Colors.black54,
+                    fontStyle: FontStyle.italic,
+                    fontSize: 14),
               ),
             ),
             const SizedBox(height: 24),
@@ -279,7 +290,8 @@ class _HomePageState extends State<HomePage> {
                     const SizedBox(height: 8),
                   ],
                   if (_loading)
-                    const Center(child: Padding(
+                    const Center(
+                        child: Padding(
                       padding: EdgeInsets.all(16.0),
                       child: CircularProgressIndicator(color: kGold),
                     ))
@@ -288,45 +300,55 @@ class _HomePageState extends State<HomePage> {
                       _message,
                       style: const TextStyle(fontSize: 15, height: 1.5),
                     ),
-                    
                     if (_prayer.isNotEmpty) ...[
                       const SizedBox(height: 16),
                       const Text(
                         'Prayer',
-                        style: TextStyle(fontWeight: FontWeight.bold, color: kBlue, fontSize: 15),
+                        style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: kBlue,
+                            fontSize: 15),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         _prayer,
-                        style: const TextStyle(fontSize: 15, height: 1.5, fontStyle: FontStyle.italic),
+                        style: const TextStyle(
+                            fontSize: 15,
+                            height: 1.5,
+                            fontStyle: FontStyle.italic),
                       ),
                     ],
-
                     const Divider(height: 32),
-
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
                         TextButton.icon(
                           onPressed: _generatingVideo ? null : _generateShort,
-                          icon: _generatingVideo 
-                              ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2, color: kBlue))
+                          icon: _generatingVideo
+                              ? const SizedBox(
+                                  width: 16,
+                                  height: 16,
+                                  child: CircularProgressIndicator(
+                                      strokeWidth: 2, color: kBlue))
                               : const Icon(Icons.videocam_outlined, color: kBlue),
                           label: Text(
                             _generatingVideo ? 'Queueing...' : 'Create Short',
-                            style: const TextStyle(color: kBlue, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                                color: kBlue, fontWeight: FontWeight.bold),
                           ),
                         ),
                         TextButton.icon(
                           onPressed: () {
-                            final textToShare = '$_title\n\n$_verse\n\n$_message\n\nPrayer: $_prayer';
+                            final textToShare =
+                                '$_title\n\n$_verse\n\n$_message\n\nPrayer: $_prayer';
                             Clipboard.setData(ClipboardData(text: textToShare));
                             say(context, 'Devotional text copied to clipboard!');
                           },
                           icon: const Icon(Icons.share_outlined, color: kBlue),
                           label: const Text(
                             'Share Text',
-                            style: TextStyle(color: kBlue, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                                color: kBlue, fontWeight: FontWeight.bold),
                           ),
                         ),
                       ],
@@ -335,13 +357,11 @@ class _HomePageState extends State<HomePage> {
                 ],
               ),
             ),
-
-            const SizedBox(height: 8), 
+            const SizedBox(height: 8),
 
             // ✅ HEALTH TIPS UI
             const HealthTipCard(),
-            
-            const SizedBox(height: 24), 
+            const SizedBox(height: 24),
           ],
         ),
       ),
@@ -377,7 +397,8 @@ class SermonsPage extends StatelessWidget {
           subtitle: Text(_sermons[i][1]),
           trailing: const Icon(Icons.download_outlined, color: kGold),
           onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Audio and video playback coming soon')),
+            const SnackBar(
+                content: Text('Audio and video playback coming soon')),
           ),
         ),
       ),
@@ -427,15 +448,17 @@ class GivePage extends StatelessWidget {
       children: [
         const SectionCard(
           title: 'Give with a cheerful heart',
-          child: Text('Your tithes and offerings support the work of the ministry.'),
+          child:
+              Text('Your tithes and offerings support the work of the ministry.'),
         ),
         SectionCard(
           title: 'Bank transfer',
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text('Bank: Fidelity Bank'), 
-              const Text('Approved Temporary Account For The Ministries: Micheal Owowa'),
+              const Text('Bank: Fidelity Bank'),
+              const Text(
+                  'Approved Temporary Account For The Ministries: Micheal Owowa'),
               const Text('Account Number: 6011920596',
                   style: TextStyle(fontWeight: FontWeight.w700)),
               const SizedBox(height: 10),
