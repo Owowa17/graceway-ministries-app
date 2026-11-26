@@ -164,42 +164,64 @@ class _HomePageState extends State<HomePage> {
 
   // ✅ FIXED: This method is now correctly inside the class with proper syntax
   Future<void> _generateShort() async {
-    setState(() => _generatingVideo = true);
-    final videoText = '$_verse\n\n$_message\n\nPrayer: $_prayer';
+  setState(() => _generatingVideo = true);
+  final videoText = '$_verse\n\n$_message\n\nPrayer: $_prayer';
+  
+  try {
+    final client = http.Client();
+    final request = http.Request('POST', Uri.parse(kScriptUrl));
     
-    try {
-      final client = http.Client();
-      final request = http.Request('POST', Uri.parse(kScriptUrl));
-      
-      // ✅ Tell Google to skip the redirect to the login page
-      request.headers['X-Requested-With'] = 'XMLHttpRequest'; 
-      
-      request.bodyFields = {
-        'type': 'generate_video',
-        'title': _title,
-        'text': videoText,
-      };
+    // 1. Stop the client from automatically following redirects
+    request.followRedirects = false; 
+    
+    request.bodyFields = {
+      'type': 'generate_video',
+      'title': _title,
+      'text': videoText,
+    };
 
-      final streamedResponse = await client.send(request).timeout(const Duration(seconds: 20));
-      final response = await http.Response.fromStream(streamedResponse);
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        if (data['status'] == 'success') {
-          say(context, '✅ Video queued! It will be ready in a few minutes.');
+    final streamedResponse = await client.send(request).timeout(const Duration(seconds: 20));
+    
+    // 2. Check if Google sent a 302 Redirect
+    if (streamedResponse.statusCode == 302) {
+      final redirectUrl = streamedResponse.headers['location'];
+      
+      if (redirectUrl != null) {
+        // 3. Manually follow the redirect with a GET request to get the result
+        final finalResponse = await http.get(Uri.parse(redirectUrl));
+        
+        if (finalResponse.statusCode == 200) {
+          final data = jsonDecode(finalResponse.body);
+          if (data['status'] == 'success') {
+            say(context, '✅ Video queued! It will be ready in a few minutes.');
+          } else {
+            say(context, '❌ Server error: ${data['message']}');
+          }
         } else {
-          say(context, '❌ Server error: ${data['message']}');
+          say(context, '❌ Error fetching final result: ${finalResponse.statusCode}');
         }
       } else {
-        say(context, '❌ HTTP Error: ${response.statusCode}');
+        say(context, '❌ Redirect URL missing.');
       }
-    } catch (e) {
-      say(context, '❌ Network error: $e');
-    } finally {
-      if (mounted) setState(() => _generatingVideo = false);
+    } 
+    // 4. Handle direct success (if a redirect was skipped)
+    else if (streamedResponse.statusCode == 200) {
+      final response = await http.Response.fromStream(streamedResponse);
+      final data = jsonDecode(response.body);
+      if (data['status'] == 'success') {
+        say(context, '✅ Video queued! It will be ready in a few minutes.');
+      } else {
+        say(context, '❌ Server error: ${data['message']}');
+      }
+    } else {
+      say(context, '❌ HTTP Error: ${streamedResponse.statusCode}');
     }
+  } catch (e) {
+    say(context, '❌ Network error: $e');
+  } finally {
+    if (mounted) setState(() => _generatingVideo = false);
   }
-
+}
   // ✅ FIXED: Restored the proper @override keyword
   @override
   Widget build(BuildContext context) {
